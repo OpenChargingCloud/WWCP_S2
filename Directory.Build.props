@@ -1,0 +1,34 @@
+<Project>
+
+  <!--
+    Shared build settings for all WWCP S2 projects.
+    See PLAN.md, decision D6 ("Modern .NET 10 / C# 14 usage") and Phase 0.
+  -->
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>latest</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+
+    <!-- Every warning is a build error; the analyzer level is the recommended set of the current SDK. -->
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>false</EnforceCodeStyleInBuild>
+
+    <!-- XML documentation is part of the definition of done. -->
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(GITHUB_ACTIONS)' == 'true'">true</ContinuousIntegrationBuild>
+
+    <Authors>GraphDefined GmbH</Authors>
+    <Company>GraphDefined GmbH</Company>
+    <Copyright>Copyright (c) 2014-2026 GraphDefined GmbH</Copyright>
+    <PackageLicenseExpression>AGPL-3.0-or-later</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/OpenChargingCloud/WWCP_S2</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/OpenChargingCloud/WWCP_S2</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+
+</Project>

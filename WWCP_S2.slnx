@@ -1,0 +1,11 @@
+<Solution>
+  <Folder Name="/Dependencies/">
+    <Project Path="../Hermod/Hermod/Hermod.csproj" />
+    <Project Path="../Hermod/HermodTests/HermodTests.csproj" />
+    <Project Path="../Styx/Styx/Styx.csproj" />
+    <Project Path="../Styx/StyxTests/StyxTests.csproj" />
+  </Folder>
+  <Project Path="WWCP_S2/WWCP_S2.csproj" />
+  <Project Path="WWCP_S2Tests/WWCP_S2Tests.csproj" Id="082956d5-d859-4034-a2a7-0853b7ae5005" />
+  <Project Path="WWCP_S2_Samples/WWCP_S2_Samples.csproj" />
+</Solution>

@@ -1,0 +1,162 @@
+openapi: 3.0.3
+info:
+  version: "v1.0"
+  title: S2 Connect - WAN Endpoint registry
+  description: "The HTTP API specification of the S2 Connect WAN Endpoint registry. For more information, please find the specification at [S2 documentation](https://docs.s2standard.org)."
+  license:
+    name: Apache-2.0
+    url: https://raw.githubusercontent.com/flexiblepower/s2-connect/refs/heads/main/LICENSE
+servers: 
+  - url: /v1
+  
+paths:
+  /endpoint:
+    get:
+      summary: Query S2 Connect WAN endpoints registry
+      operationId: queryEndpoints
+      description: Query the S2 Connect WAN Endpoint registry. Several query parameters can be used to filter the results.
+      parameters:
+        - name: region
+          in: query
+          schema:
+            type: array
+            items:
+              $ref: "#/components/schemas/CountryCode"
+          required: false
+          style: form
+          explode: false
+          description: Country codes to filter on. Codes are delimited by commas (e.g. "endpoint?region=NL,BE,LU") When multiple codes provided, results will include endpoints that are active in at least one of the provided country codes.
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/Status"
+          required: false
+          description: Status of the endpoint to filter on. When no value provided, the default value wil be "public".
+        - name: cem
+          in: query
+          schema: 
+            type: boolean
+          required: false
+          description: Filter on endpoints that represent CEMs. When no value provided no filtering will take place.
+        - name: rm
+          in: query
+          schema: 
+            type: boolean
+          required: false
+          description: Filter on endpoints that represent RMs. When no value provided no filtering will take place.
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+          required: false
+          description: Limit for the number of responses
+        - name: offset
+          in: query
+          schema:
+            type: integer
+            minimum: 0
+          required: false
+          description: Offset for results (useful for follow-up queries where the number of responses was limited)
+      responses: 
+        '200':
+          description: Normal response of the registry
+          content: 
+            application/json:
+              schema: 
+                type: array
+                items:
+                  $ref: "#/components/schemas/EndpointRecord"
+        '400':
+          description: Invalid query parameters
+    
+  /endpoint/{id}:
+    get:
+      summary: Find endpoint by id
+      operationId: getEndpointById
+      description: Retrieve a single S2 Connect WAN endpoint by providing its id
+      parameters:
+        - name: id
+          in: path
+          schema:
+            $ref: "#/components/schemas/Id"
+          required: true
+      responses:
+        '200':
+          description: Show the record of one endpoint
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EndpointRecord"
+        '404':
+          description: No record with the specified id found
+    
+components:
+  schemas:
+    EndpointRecord:
+      type: object
+      required:
+        - id
+        - name
+        - description
+        - icon32
+        - icon128
+        - icon512
+        - pairingUrl
+        - regions
+        - status
+        - cem
+        - rm
+      properties:
+        id:
+          $ref: "#/components/schemas/Id"
+        name:
+          description: User facing name of the endpoint.
+          type: string
+          maxLength: 50
+        description:
+          description: User facing description of the endpoint.
+          maxLength: 500
+        icon32:
+          description: URL of the icon of the endpoint in the size of 32 by 32 pixels and in PNG format.
+          type: string
+          format: uri
+        icon128:
+          description: URL of the icon of the endpoint in the size of 128 by 128 pixels and in PNG format.
+          type: string
+          format: uri
+        icon512:
+          description: URL of the icon of the endpoint in the size of 512 by 512 pixels and in PNG format.
+          type: string
+          format: uri
+        pairingUrl:
+          description: URL of the pairing API. Must include the protocol ('https://') and end with a slash ('/'), and may not include the API version (e.g. 'https://hostname.tld/pairing/'). 
+          type: string
+          format: uri
+        regions:
+          description: The ISO 3166-1 alpha-2 country codes in which this S2 WAN Endpoint operates.
+          type: array
+          minItems: 1
+          items:
+            $ref: "#/components/schemas/CountryCode"
+        status:
+          $ref: "#/components/schemas/Status"
+        cem:
+          description: Indicates if this endpoint represents CEMs
+          type: boolean
+        rm:
+          description: indicates if this endpoint represents RMs
+          type: boolean
+    Id:
+      description: Unique identifier of the WAN endpoint registration
+      type: string
+      format: uuid
+    CountryCode:
+      description: An ISO 3166-1 alpha-2 country code
+      type: string
+      pattern: '^[A-Z]{2}$'
+    Status:
+      description: Status of the endpoint
+      type: string
+      enum: ["public", "testing"]
+      default: "public"

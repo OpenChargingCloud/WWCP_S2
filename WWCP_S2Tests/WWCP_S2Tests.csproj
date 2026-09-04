@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>cloud.charging.open.protocols.S2.Tests</RootNamespace>
+    <AssemblyName>cloud.charging.open.protocols.S2.Tests</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+    <!-- Test code documents itself through its names. -->
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="18.9.0" />
+    <PackageReference Include="NUnit" Version="4.6.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="6.3.0" />
+    <!-- Fake clock for every TimeProvider-driven deadline (PLAN.md D14). -->
+    <PackageReference Include="Microsoft.Extensions.TimeProvider.Testing" Version="10.9.0" />
+    <!-- JSON Schema draft 2020-12 validation of every serialised message against the embedded s2-json schemas. -->
+    <PackageReference Include="JsonSchema.Net" Version="7.4.0" />
+    <!-- Layering rule of PLAN.md D2. -->
+    <PackageReference Include="NetArchTest.Rules" Version="1.3.2" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="NUnit.Framework" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WWCP_S2\WWCP_S2.csproj" />
+  </ItemGroup>
+
+</Project>

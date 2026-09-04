@@ -1,0 +1,111 @@
+root = true
+
+[*]
+charset = utf-8
+end_of_line = crlf
+insert_final_newline = true
+trim_trailing_whitespace = true
+
+[*.{cs,csproj,props,targets,slnx}]
+indent_style = space
+indent_size = 4
+
+[*.{json,yml,yaml,md}]
+indent_style = space
+indent_size = 2
+
+[*.cs]
+
+# ---------------------------------------------------------------------------
+# Analyzer rules that contradict the OpenChargingCloud / Vanaheimr conventions
+# (see PLAN.md, D5). Each entry states why it is switched off.
+# ---------------------------------------------------------------------------
+
+# CA1707: Identifiers should not contain underscores.
+# Typed identifiers are named `Message_Id`, `Resource_Id`, ... and schema types
+# with a control-type prefix are named after their schema title, e.g.
+# `FRBC_ActuatorDescription`.
+dotnet_diagnostic.CA1707.severity = none
+
+# CA1711: Identifiers should not have incorrect suffix.
+# `...Delegate`, `...Collection`, `...EventHandler` suffixes are used deliberately.
+dotnet_diagnostic.CA1711.severity = none
+
+# CA1716: Identifiers should not match keywords (e.g. a parameter called `Object`).
+# The ecosystem's `Equals(Object? Object)` signature uses exactly that name.
+dotnet_diagnostic.CA1716.severity = none
+
+# CA1720: Identifiers should not contain type names (e.g. `Text`, `Object`).
+dotnet_diagnostic.CA1720.severity = none
+
+# CA1725: Parameter names should match base declaration (`obj`).
+# The ecosystem names the parameters of Equals/CompareTo after the type
+# (`Equals(Object? Object)`, `CompareTo(Timer_Id TimerId)`).
+dotnet_diagnostic.CA1725.severity = none
+
+# CA1051: Do not declare visible instance fields.
+# Identifier structs expose `public readonly String Value` like every sibling library.
+dotnet_diagnostic.CA1051.severity = none
+
+# CA2225: Operator overloads have named alternates.
+# Comparison operators on identifiers and predefined strings are backed by
+# IComparable/IEquatable, no additional named methods are wanted.
+dotnet_diagnostic.CA2225.severity = none
+
+# CA1305 / CA1307 / CA1310: culture-specific string operations.
+# All wire-format strings are compared ordinally; explicit `StringComparison`
+# arguments are used where it matters, the remaining hits are formatting of
+# diagnostics only.
+dotnet_diagnostic.CA1305.severity = none
+dotnet_diagnostic.CA1307.severity = none
+dotnet_diagnostic.CA1310.severity = none
+
+# CA1002 / CA1024 / CA1034 / CA1054 / CA1056: API shape rules that do not fit
+# the ecosystem (nested Builder/Logger classes, URL strings on the wire, ...).
+dotnet_diagnostic.CA1002.severity = none
+dotnet_diagnostic.CA1024.severity = none
+dotnet_diagnostic.CA1034.severity = none
+dotnet_diagnostic.CA1054.severity = none
+dotnet_diagnostic.CA1056.severity = none
+
+# CA1062: Validate arguments of public methods.
+# Nullable reference types are enabled; explicit null checks are added only
+# where a null would not surface immediately.
+dotnet_diagnostic.CA1062.severity = none
+
+# CA1822: Mark members as static — noisy for extension-style instance members
+# kept for API symmetry.
+dotnet_diagnostic.CA1822.severity = suggestion
+
+# CA1031: Do not catch general exception types.
+# `TryParse` methods deliberately convert every exception into an error response.
+dotnet_diagnostic.CA1031.severity = none
+
+# CA1848 / CA2254 / CA1873: LoggerMessage delegates, static log templates, expensive log arguments.
+# Logging volume in this library is low; plain `ILogger` calls with simple arguments are acceptable.
+dotnet_diagnostic.CA1848.severity = none
+dotnet_diagnostic.CA2254.severity = none
+dotnet_diagnostic.CA1873.severity = none
+
+# CA1515: Consider making public types internal (test projects).
+dotnet_diagnostic.CA1515.severity = none
+
+# CA1861: Prefer static readonly fields over constant array arguments (test data).
+dotnet_diagnostic.CA1861.severity = none
+
+# CA1859 / CA1860 / CA1865 / CA1866: micro-optimisation suggestions.
+dotnet_diagnostic.CA1859.severity = none
+dotnet_diagnostic.CA1860.severity = none
+
+# CA1819: Properties should not return arrays — S2 arrays are exposed as IReadOnlyList<T>,
+# byte payloads (challenges, tokens) as ReadOnlyMemory<byte>; the rule stays on.
+
+# IDE0290: Use primary constructor — the ecosystem keeps explicit constructors
+# with `#region Constructor(s)` blocks.
+dotnet_diagnostic.IDE0290.severity = none
+
+[*Tests/**.cs]
+# Test names such as `TryParse_RejectsLowerCase` are conventional.
+dotnet_diagnostic.CA1707.severity = none
+# NUnit test classes are instantiated by the runner.
+dotnet_diagnostic.CA1812.severity = none

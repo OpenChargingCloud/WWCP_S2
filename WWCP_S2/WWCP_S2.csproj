@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>cloud.charging.open.protocols.S2</RootNamespace>
+    <AssemblyName>cloud.charging.open.protocols.S2</AssemblyName>
+    <PackageId>cloud.charging.open.protocols.S2</PackageId>
+    <Version>0.1.0</Version>
+    <Description>An implementation of the S2 energy flexibility standard (EN 50491-12-2, S2 JSON v1.0.0) and S2 Connect 1.0.0 for .NET, built on the Vanaheimr Styx and Hermod libraries.</Description>
+    <PackageTags>S2;S2Connect;EN50491-12-2;energy;flexibility;CEM;RM;WWCP;OpenChargingCloud</PackageTags>
+    <PackageReadmeFile>README.md</PackageReadmeFile>
+    <EnablePackageValidation>true</EnablePackageValidation>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The normative S2 JSON schemas (v1.0.0) and S2 Connect OpenAPI files (v1.0), Apache-2.0,
+         see THIRD-PARTY-NOTICES.md. Embedded for schema-validation tests and diagnostics. -->
+    <EmbeddedResource Include="Schemas\**\*.json;Schemas\**\*.yml" />
+    <None Include="..\README.md" Pack="true" PackagePath="\" />
+    <None Include="..\THIRD-PARTY-NOTICES.md" Pack="true" PackagePath="\" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Cryptographically insecure random helpers and URL-safe Base64 are banned, see BannedSymbols.txt. -->
+    <AdditionalFiles Include="BannedSymbols.txt" />
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Hermod\Hermod\Hermod.csproj" />
+    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="cloud.charging.open.protocols.S2.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,69 @@
+name: CI
+
+on:
+  push:
+    branches: [master, main]
+  pull_request:
+    branches: [master, main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+# PLAN.md, D12: Styx and Hermod are checked out as sibling directories, because
+# WWCP_S2.csproj references ..\..\Styx\Styx\Styx.csproj and ..\..\Hermod\Hermod\Hermod.csproj.
+# Both are pinned to the commits this repository was last built against; bump them
+# deliberately.
+env:
+  STYX_REF: 0f40d614a9b3f7562193f2ed6ae94fb4685fa6fe
+  HERMOD_REF: b91cf73d4caef4001c445bb110babf6923264d1c
+
+jobs:
+  build-and-test:
+    # TLS and certificate behaviour differs between Schannel (Windows) and OpenSSL (Linux),
+    # so both platforms are gates. fail-fast is off: "red on one platform" is the signal.
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: WWCP_S2
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Vanaheimr/Styx
+          ref: ${{ env.STYX_REF }}
+          path: Styx
+
+      - uses: actions/checkout@v4
+        with:
+          repository: Vanaheimr/Hermod
+          ref: ${{ env.HERMOD_REF }}
+          path: Hermod
+
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+
+      - name: Build
+        working-directory: WWCP_S2
+        run: dotnet build WWCP_S2Tests/WWCP_S2Tests.csproj --configuration Release
+
+      # Everything that runs deterministically in-process. Timing (real-clock Hermod
+      # behaviour), Multicast (DNS-SD on the host network) and Interop (docker) are
+      # nightly categories, see PLAN.md §8.
+      - name: Test
+        timeout-minutes: 30
+        working-directory: WWCP_S2
+        run: dotnet test WWCP_S2Tests/WWCP_S2Tests.csproj --configuration Release --no-build --filter "TestCategory!=Timing&TestCategory!=Multicast&TestCategory!=Interop" --logger "console;verbosity=normal" --logger "trx;LogFileName=${{ matrix.os }}.trx" --results-directory artifacts
+
+      - name: Upload test results
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: WWCP_S2/artifacts/*.trx

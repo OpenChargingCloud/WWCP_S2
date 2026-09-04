@@ -1,0 +1,74 @@
+openapi: 3.0.3
+info:
+  version: "v1.0"
+  title: S2 Connect - Common schemas
+  description: "Common schemas used for both pairing and connection initiation. For more information, please find the specification at [S2 documentation](https://docs.s2standard.org)."
+  license:
+    name: Apache-2.0
+    url: https://raw.githubusercontent.com/flexiblepower/s2-connect/refs/heads/main/LICENSE
+components:
+  schemas:  
+    NodeId:
+      description: Unique identifier of the node
+      type: string
+      format: uuid
+    CommunicationProtocol:
+      type: string
+      description: The type of communication protocol supported by the node
+      enum:
+        - "WebSocket"
+    AccessToken:
+      description: "One-time access token for secure access to the S2 message communication channel. It must be renewed every time a client wants to access the S2 message communication channel by calling the requestToken endpoint.\
+                     This token is valid for one time login, with a maximum 5 years, and should have a minimum length of 32 bytes."
+      type: string
+      format: byte
+    CommunicationToken:
+      description: "Token that is used to authorize the communication channel (e.g. WebSocket) between the nodes. It is obtained by calling the requestToken endpoint and is valid for a single connection to the S2 message communication channel.\
+                     This token is valid for maximum 30 seconds, and should have a minimum length of 32 bytes."
+      type: string
+      format: byte
+    EndpointDescription:
+      description: Information about the pairing endpoint of a node
+      properties:
+        name:
+          type: string
+        logoUrl:
+          type: string
+          format: uri
+        deployment:
+          $ref: "#/components/schemas/Deployment"
+    NodeDescription:
+      required:
+        - "id"
+        - "brand"
+        - "type"
+        - "modelName"
+        - "role"
+      type: object
+      description: Information about the node
+      properties:
+        id:
+          $ref: "#/components/schemas/NodeId"
+        brand:
+          type: string
+        logoUrl:
+          type: string
+          format: uri
+        type:
+          type: string
+        modelName:
+          type: string
+        userDefinedName:
+          type: string
+        role:
+          $ref: "#/components/schemas/Role"
+    Role:
+      type: string
+      enum:
+        - "CEM"
+        - "RM"
+    Deployment:
+      type: string
+      enum:
+        - "WAN"
+        - "LAN"

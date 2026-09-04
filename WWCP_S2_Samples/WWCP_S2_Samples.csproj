@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>cloud.charging.open.protocols.S2.Samples</RootNamespace>
+    <AssemblyName>cloud.charging.open.protocols.S2.Samples</AssemblyName>
+    <IsPackable>false</IsPackable>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);CS1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\WWCP_S2\WWCP_S2.csproj" />
+  </ItemGroup>
+
+</Project>

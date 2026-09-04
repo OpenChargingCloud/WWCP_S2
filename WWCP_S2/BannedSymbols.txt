@@ -1,0 +1,14 @@
+# Banned APIs for the WWCP S2 library (Microsoft.CodeAnalysis.BannedApiAnalyzers).
+# Format: T:<type> | M:<method> | P:<property>; text after the semicolon is the diagnostic message.
+#
+# Every pairing token, challenge, pairing attempt id, access token and communication token
+# must come from a cryptographically secure generator (S2 Connect 1.0.0, sections
+# "The pairing token, the node ID alias and the pairing code", "Challenge response process",
+# "3. Response status 200" and "8A. Response status 200").
+T:System.Random;Use System.Security.Cryptography.RandomNumberGenerator via TokenGenerator.
+M:org.GraphDefined.Vanaheimr.Illias.RandomExtensions.RandomString(System.UInt16);Not a CSPRNG. Use TokenGenerator.
+M:org.GraphDefined.Vanaheimr.Illias.RandomExtensions.RandomBytes(System.UInt16);Not a CSPRNG. Use RandomNumberGenerator or RandomExtensions.SecureRandomBytes.
+M:org.GraphDefined.Vanaheimr.Illias.RandomExtensions.RandomHexString(System.UInt16);Not a CSPRNG. Use TokenGenerator.
+#
+# All S2 Connect binary wire fields are standard Base64 with padding (OpenAPI `format: byte`).
+T:System.Buffers.Text.Base64Url;S2 Connect wire fields use standard Base64 (Convert.ToBase64String), never Base64Url.
