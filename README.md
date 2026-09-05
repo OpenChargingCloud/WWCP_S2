@@ -49,7 +49,8 @@ what each phase added.
 | 12 | Documentation, public API baseline and packaging | done |
 
 Interoperability and conformance testing against the reference implementations (s2-python,
-s2-rust) lives in a separate repository.
+s2-rust) lives in its own repository:
+[**S2ConformanceTests**](https://github.com/OpenChargingCloud/S2ConformanceTests).
 
 ## Quick start
 
@@ -376,6 +377,7 @@ are missing. Until then, use the library from source, or supply both assemblies 
 | [CHANGELOG.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/CHANGELOG.md) | What each phase added, and every fix that came out of a review |
 | [SECURITY.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/SECURITY.md) | How to report a vulnerability, and the security model of the implementation |
 | [THIRD-PARTY-NOTICES.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/THIRD-PARTY-NOTICES.md) | The embedded normative schemas and OpenAPI files and their licenses |
+| [S2ConformanceTests](https://github.com/OpenChargingCloud/S2ConformanceTests) | The separate repository for interoperability and conformance testing against s2-python and s2-rust |
 
 Every serialised message and data structure is validated against the embedded s2-json v1.0.0
 schemas in the test suite; the data model enforces the semantic rules of the schema descriptions.

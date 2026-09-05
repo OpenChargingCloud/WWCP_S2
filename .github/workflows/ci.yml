@@ -90,10 +90,11 @@ jobs:
       # The bare debian:13 container needs the .NET runtime prerequisites before
       # setup-dotnet installs the SDK: curl for the dotnet-install script itself,
       # ICU and tzdata for globalization, OpenSSL for crypto, ca-certificates for
-      # NuGet over HTTPS. Package names verified on Debian 13 (trixie).
+      # NuGet over HTTPS. Package names verified on Debian 13 (trixie). unzip is
+      # for the Package step below, which looks inside the .nupkg it built.
       - name: Install .NET prerequisites (Debian container)
         if: runner.os == 'Linux'
-        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libicu76 libssl3t64 libstdc++6 tzdata
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libicu76 libssl3t64 libstdc++6 tzdata unzip
 
       - uses: actions/setup-dotnet@v6
         with:
@@ -124,7 +125,7 @@ jobs:
       #
       # The Interop category is not excluded any more because it no longer exists here:
       # the conformance work against s2-python and s2-rust moved to its own repository
-      # on 2026-09-05.
+      # on 2026-09-05: https://github.com/OpenChargingCloud/S2ConformanceTests
       - name: Test
         timeout-minutes: 30
         working-directory: WWCP_S2
@@ -156,6 +157,10 @@ jobs:
       # exist) and "Styx 1.0.0" — an id that on nuget.org belongs to an unrelated library.
       # WWCP_S2.csproj keeps both out with PrivateAssets; this step is what notices if that
       # protection is ever lost.
+      # It also checks the LAYOUT of the package it built, and does that here rather than on
+      # Windows on purpose: NuGet's package paths are the one part of packing that behaves
+      # differently on the two platforms, because a backslash is a path separator on one and a
+      # legal file name character on the other.
       - name: Package
         if: matrix.leg == 'debian-13-container'
         shell: bash
@@ -163,11 +168,22 @@ jobs:
         run: |
           set -e
           dotnet pack WWCP_S2/WWCP_S2.csproj --configuration Release --no-build -o artifacts/package
-          if grep -E 'dependency id="(Styx|org\.GraphDefined\.Vanaheimr\.Hermod)"' WWCP_S2/obj/Release/*.nuspec; then
+          package=$(ls artifacts/package/*.nupkg)
+          echo "Contents of $package:"
+          unzip -Z1 "$package"
+
+          # The readme PackageReadmeFile points at, the notices and the targets that tell a
+          # consumer about Styx and Hermod all have to be exactly where they are expected.
+          for entry in README.md THIRD-PARTY-NOTICES.md buildTransitive/cloud.charging.open.protocols.S2.targets lib/net10.0/cloud.charging.open.protocols.S2.dll lib/net10.0/cloud.charging.open.protocols.S2.xml; do
+            unzip -Z1 "$package" | grep -qxF "$entry" || { echo "::error::The package does not contain '$entry'."; exit 1; }
+          done
+
+          echo "Dependencies:"
+          unzip -p "$package" '*.nuspec' | sed -n '/<dependencies>/,/<\/dependencies>/p'
+          if unzip -p "$package" '*.nuspec' | grep -E 'dependency id="(Styx|org\.GraphDefined\.Vanaheimr\.Hermod)"'; then
             echo "::error::The package declares an unpublished sibling project as a NuGet dependency; see the comment above this step in ci.yml."
             exit 1
           fi
-          ls -la artifacts/package
 
       - name: Upload package
         if: ${{ !cancelled() && matrix.leg == 'debian-13-container' }}
