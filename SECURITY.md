@@ -8,6 +8,14 @@ communication tokens are credentials. Please read the "Security (normative)" sec
 S2 Connect specification (https://docs.s2standard.org/s2-connect/1.0.0/) and the redaction
 rules in `PLAN.md` §3.6 before reporting or fixing an issue in these areas.
 
+## Known limitations
+
+* **Secrets are stored in clear text by default.** `JSONFileS2Store` persists the access token of
+  every pairing and every pending access token, and its `ISecretProtector` hook defaults to a
+  no-op. Anyone who can read that file can impersonate a paired node until the token is rotated,
+  so protect it with file permissions and, where it matters, an encrypted file system - or plug in
+  your own protector. See `PLAN.md` §11 for the open design question behind this.
+
 ## Reporting Security Vulnerabilities
 
 Please report security vulnerabilities in the Issues section of this repository. By keeping

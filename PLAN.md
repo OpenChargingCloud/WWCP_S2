@@ -588,3 +588,38 @@ Every normative table row of the S2 Connect spec and every rule of §3.3 maps to
   third-party notices, library versioning and layering test.
 * Re-planned: phases split (1a–c, 2a–b, 6a–b, 9a–c, 10a–b, 11a–b), certificates moved from Phase 11 to Phase 5,
   dependency graph corrected, sizes raised to ≈ 12–14 developer-weeks, open questions rewritten (Newtonsoft is settled).
+
+
+## 11. To do later (not scheduled)
+
+Items that are deliberately open. Each one names what exists today, so that picking it up does not start with
+re-reading the code.
+
+### Secret protection at rest (`ISecretProtector`)
+
+`JSONFileS2Store` writes the whole S2 Connect state to one JSON file after every mutation, and that file contains the
+`accessToken` of every pairing and the `token` of every pending access token. Those are bearer credentials with a long
+life: whoever holds one can call `initiateSession`, receive a communication token and open an S2 session — without
+pairing, challenge-response or the peer's certificate. A backup, a disk image, a generous file permission or the flash
+of a discarded controller is therefore enough to impersonate a paired node until the token is rotated.
+
+What exists is the seam, not the protection: `ISecretProtector` (`Protect`/`Unprotect` plus a `SchemeId`), applied by
+the store to exactly those token fields, with the scheme id written into the file so that a value protected by one
+scheme is never read back by another (`NotSupportedException` instead of silent garbage). The default is
+`PlaintextSecretProtector`, an honest no-op with an empty scheme id — so today the tokens are stored in clear text and
+the file says so.
+
+What is open is not the implementation but the question it depends on: **where does the key come from?**
+
+* **DPAPI** (`ProtectedData.Protect`, scope `CurrentUser`) needs no key management at all and is about forty lines —
+  but it is Windows only, and this library also targets Debian.
+* **KMS or an HSM** is the right answer for a cloud deployment, but it puts a network dependency into a path that has
+  to work at start-up.
+* **AES-GCM with a local key** is platform neutral and only moves the problem: the key then lives somewhere on the same
+  disk, and on an embedded RM without a secure element it is as readable as the token itself. There, file permissions
+  plus an encrypted file system are the more honest answer than an encryption that merely claims safety.
+
+A plausible shape: ship a `DPAPISecretProtector` (Windows) and an `AesGcmSecretProtector` whose key comes from a file
+protected by its ACL or from the environment, both documented with what they do *not* achieve, and leave the choice to
+the deployment. Independently of the protector, the store should create its file with restrictive permissions — today
+it inherits whatever the directory grants.

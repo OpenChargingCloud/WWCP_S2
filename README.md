@@ -269,7 +269,7 @@ for a constrained RM, therefore stays possible.
 | Rate limiting per source, request and WebSocket message size limits | complete |
 | Log redaction of secrets, structured state included | complete |
 | `Microsoft.Extensions.Logging` throughout, `System.Diagnostics.Metrics` counters | complete |
-| Secret protection at rest (DPAPI, KMS) | hook only, no implementation |
+| Secret protection at rest (DPAPI, KMS) | `ISecretProtector` hook only, no implementation - stored in clear text by default, see [PLAN.md §11](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/PLAN.md) |
 
 ## Deployment and ports
 
