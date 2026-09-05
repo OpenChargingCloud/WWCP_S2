@@ -60,45 +60,14 @@ namespace cloud.charging.open.protocols.S2.Tests.Architecture
 
         [Test]
         public void PublicAPI_MatchesTheBaseline()
-        {
 
-            var current   = Render(typeof(Version).Assembly);
-            var update    = Environment.GetEnvironmentVariable(UpdateEnvironment) is String flag &&
-                            (flag == "1" || flag.Equals("true", StringComparison.OrdinalIgnoreCase));
-            var sourceOf  = SourcePath();
-
-            if (update)
-            {
-
-                if (sourceOf is null)
-                    Assert.Fail($"'{UpdateEnvironment}' is set, but the baseline file could not be located from '{TestContext.CurrentContext.TestDirectory}'.");
-
-                else
-                {
-                    File.WriteAllText(sourceOf, current, new UTF8Encoding(false));
-                    Assert.Warn($"The public API baseline was regenerated: '{sourceOf}'. Review the diff before committing it.");
-                }
-
-                return;
-
-            }
-
-            var baseline  = Baseline();
-
-            if (baseline == current)
-                return;
-
-            var actualOf  = Path.Combine(TestContext.CurrentContext.WorkDirectory, "PublicAPI.actual.txt");
-            File.WriteAllText(actualOf, current, new UTF8Encoding(false));
-
-            Assert.Fail(
-                $"The public API of the library differs from '{BaselineFile}'.{Environment.NewLine}{Environment.NewLine}" +
-                $"{Diff(baseline, current)}{Environment.NewLine}" +
-                $"The full current surface was written to '{actualOf}'.{Environment.NewLine}" +
-                $"If the change is intended, regenerate the baseline with '{UpdateEnvironment}=1' and review its diff."
-            );
-
-        }
+            => GeneratedDocument.CompareOrUpdate(
+                   Render(typeof(Version).Assembly),
+                   BaselineResource,
+                   Path.Combine("WWCP_S2Tests", "Architecture", BaselineFile),
+                   UpdateEnvironment,
+                   "The public API of the library"
+               );
 
         #endregion
 
@@ -111,103 +80,13 @@ namespace cloud.charging.open.protocols.S2.Tests.Architecture
         public void Baseline_IsNotEmpty()
         {
 
-            var baseline = Baseline();
+            var baseline = GeneratedDocument.Read(BaselineResource);
 
             Assert.Multiple(() => {
                 Assert.That(baseline.Length,                       Is.GreaterThan(10_000));
                 Assert.That(baseline, Does.Contain("class cloud.charging.open.protocols.S2.Node.AS2Node"));
                 Assert.That(baseline, Does.Contain("cloud.charging.open.protocols.S2.Connect"));
             });
-
-        }
-
-        #endregion
-
-
-        #region (private static) Baseline()
-
-        private static String Baseline()
-        {
-
-            using var stream = typeof(PublicAPITests).Assembly.GetManifestResourceStream(BaselineResource)
-                                   ?? throw new InvalidOperationException($"The embedded baseline '{BaselineResource}' is missing!");
-
-            using var reader = new StreamReader(stream, Encoding.UTF8);
-
-            return Normalize(reader.ReadToEnd());
-
-        }
-
-        #endregion
-
-        #region (private static) SourcePath()
-
-        /// <summary>
-        /// The baseline within the working tree, found by walking up from the test assembly until
-        /// the directory holding the solution appears; null when the tests run from somewhere else.
-        /// </summary>
-        private static String? SourcePath()
-        {
-
-            var directory = new DirectoryInfo(TestContext.CurrentContext.TestDirectory);
-
-            while (directory is not null)
-            {
-
-                var candidate = Path.Combine(directory.FullName, "WWCP_S2Tests", "Architecture", BaselineFile);
-
-                if (File.Exists(candidate))
-                    return candidate;
-
-                directory = directory.Parent;
-
-            }
-
-            return null;
-
-        }
-
-        #endregion
-
-        #region (private static) Normalize(Text)
-
-        private static String Normalize(String Text)
-            => Text.Replace("\r\n", "\n").TrimEnd('\n');
-
-        #endregion
-
-        #region (private static) Diff(Baseline, Current)
-
-        /// <summary>
-        /// The first few lines that only one of the two sides has, which is what a reviewer needs
-        /// to see in the failure message; the complete listing is written to a file next to it.
-        /// </summary>
-        private static String Diff(String Baseline, String Current)
-        {
-
-            var baseline  = Baseline.Split('\n').ToHashSet(StringComparer.Ordinal);
-            var current   = Current. Split('\n').ToHashSet(StringComparer.Ordinal);
-
-            var removed   = baseline.Except(current, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
-            var added     = current. Except(baseline, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
-
-            var report    = new StringBuilder();
-
-            report.Append("Removed from the public API (").Append(removed.Length).AppendLine(" lines):");
-            foreach (var line in removed.Take(25))
-                report.Append("  - ").AppendLine(line.Trim());
-            if (removed.Length > 25)
-                report.Append("  ... ").Append(removed.Length - 25).AppendLine(" more");
-
-            report.AppendLine();
-
-            report.Append("Added to the public API (").Append(added.Length).AppendLine(" lines):");
-            foreach (var line in added.Take(25))
-                report.Append("  + ").AppendLine(line.Trim());
-            if (added.Length > 25)
-                report.Append("  ... ").Append(added.Length - 25).AppendLine(" more");
-
-            return report.ToString();
 
         }
 
@@ -243,7 +122,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Architecture
 
             }
 
-            return Normalize(api.ToString());
+            return GeneratedDocument.Normalize(api.ToString());
 
         }
 

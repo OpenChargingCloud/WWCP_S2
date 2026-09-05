@@ -377,11 +377,15 @@ are missing. Until then, use the library from source, or supply both assemblies 
 | [CHANGELOG.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/CHANGELOG.md) | What each phase added, and every fix that came out of a review |
 | [SECURITY.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/SECURITY.md) | How to report a vulnerability, and the security model of the implementation |
 | [THIRD-PARTY-NOTICES.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/THIRD-PARTY-NOTICES.md) | The embedded normative schemas and OpenAPI files and their licenses |
+| [CONFORMANCE.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/CONFORMANCE.md) | Which normative rule of S2 Connect and of PLAN.md §3.3 is exercised by which test, generated from the tests themselves |
 | [S2ConformanceTests](https://github.com/OpenChargingCloud/S2ConformanceTests) | The separate repository for interoperability and conformance testing against s2-python and s2-rust |
 
 Every serialised message and data structure is validated against the embedded s2-json v1.0.0
 schemas in the test suite; the data model enforces the semantic rules of the schema descriptions.
-Tests carry `[S2C("<section>.<row>")]` properties that link them to the normative rule they cover.
+Tests state the normative rule they exercise as `[S2C("Pairing.8A")]`, and
+[CONFORMANCE.md](https://github.com/OpenChargingCloud/WWCP_S2/blob/master/CONFORMANCE.md) is the
+index of those statements – 219 rules across 18 areas, 589 references – regenerated from the tests
+and compared on every run, so it cannot drift away from them.
 
 ## Licenses
 

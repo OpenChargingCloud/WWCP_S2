@@ -502,8 +502,10 @@ CI and nightly follow Hermod's and Styx's workflows: `windows-latest` and Debian
 `fail-fast: false`, TRX artefacts. `nightly.yml` adds what a gate cannot answer – the `Timing` category (fatal), a
 `Multicast` probe (informational, because multicast is a property of the runner) and a build against Styx and Hermod
 `master` that prints how far the pinned revisions have drifted; that job exists because the `HERMOD_REF` pin had gone
-two phases stale unnoticed. `CONFORMANCE.md`, generated from the 591 `[S2C]` test properties, was part of the interop
-phase and moved out of this plan with it.
+two phases stale unnoticed. `CONFORMANCE.md` (§8) is generated here after all, by `ConformanceDocumentTests` from the `[S2C]`
+properties of the tests: 219 rules across 18 areas, 589 references, guarded by the same compare-or-regenerate
+mechanism as the API baseline (`S2_UPDATE_CONFORMANCE=1`). Only the interop half of the old phase 11b, the
+measurement against s2-python and s2-rust, lives in the separate repository.
 
 
 ## 6. Dependencies between phases

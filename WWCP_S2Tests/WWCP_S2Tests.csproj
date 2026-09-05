@@ -28,9 +28,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <!-- The public API baseline is embedded so the comparison also works when the tests run from
-         a copied output directory; PublicAPITests writes the file in the working tree back. -->
+    <!-- The generated documents are embedded so the comparison also works when the tests run from
+         a copied output directory; the tests write the files in the working tree back. -->
     <EmbeddedResource Include="Architecture\PublicAPI.baseline.txt" />
+    <EmbeddedResource Include="..\CONFORMANCE.md" LogicalName="cloud.charging.open.protocols.S2.Tests.CONFORMANCE.md" />
   </ItemGroup>
 
   <ItemGroup>

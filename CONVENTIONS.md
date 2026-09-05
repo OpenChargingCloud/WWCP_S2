@@ -770,6 +770,12 @@ Folder `Connect/Security` (beside `SubnetCheck`/`ISubnetPolicy` from Phase 6).
   it deliberately with `S2_UPDATE_PUBLIC_API=1` and read the diff before committing; a removal or a changed signature
   means the package version has to move accordingly. The baseline is embedded in the test assembly so the comparison
   also works from a copied output directory, and `Baseline_IsNotEmpty` guards the guard.
+* **`CONFORMANCE.md` is generated, never written**: `ConformanceDocumentTests` collects the `[S2C("<area>.<rule>")]`
+  properties of the whole test assembly and renders them into a table per area, rule by rule, test by test.
+  Tag a test with the normative statement it exercises and the document follows; it is compared on every run and
+  regenerated with `S2_UPDATE_CONFORMANCE=1`, sharing the mechanics with the API baseline (`GeneratedDocument`).
+  What it can never show is a rule nobody tagged - completeness is a matter of reading the specification, not of
+  reading this file.
 * **Packaging rule: no unpublished project may become a NuGet dependency.** Styx and Hermod are source siblings that
   nobody has published, and `dotnet pack` would otherwise invent
   `org.GraphDefined.Vanaheimr.Hermod 1.0.0` (does not exist) and `Styx 1.0.0` — an id that on nuget.org belongs to an
