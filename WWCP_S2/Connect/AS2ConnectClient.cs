@@ -147,6 +147,14 @@ namespace cloud.charging.open.protocols.S2.Connect
         public Boolean                 AcceptSelfSignedCertificates          { get; }
 
         /// <summary>
+        /// The S2 Connect certificate validator enforcing the pinned certificates of this host
+        /// (PLAN.md D13, Phase 11a). When set it decides every TLS server certificate; when null
+        /// the client falls back to <see cref="AcceptSelfSignedCertificates"/> and the operating
+        /// system's judgement. A custom <c>RemoteCertificateValidator</c> still takes precedence.
+        /// </summary>
+        public S2CertificateValidator?  CertificateValidator                 { get; set; }
+
+        /// <summary>
         /// The time provider of this client.
         /// </summary>
         public TimeProvider            TimeProvider                          { get; }
@@ -733,6 +741,23 @@ namespace cloud.charging.open.protocols.S2.Connect
 
             if (customCertificateValidator is not null)
                 return customCertificateValidator(Sender, Certificate, CertificateChain, Client, PolicyErrors);
+
+            // Phase 11a: once a certificate validator is configured, it decides — it knows the
+            // pinned certificates of this host and the D13 rules.
+            if (CertificateValidator is not null)
+            {
+
+                var result = CertificateValidator.Validate(ServerDomainName, Certificate, CertificateChain, PolicyErrors);
+
+                if (!result.IsValid)
+                    Logger?.LogWarning("S2 Connect client: the TLS server certificate of {BaseUrl} was rejected ({Verdict}): {Description}",
+                                       BaseUrl.Value, result.Verdict, result.Description);
+
+                return result.IsValid
+                           ? TLSValidationResult.Success()
+                           : TLSValidationResult.Failed(result.Description);
+
+            }
 
             if (Certificate is null)
                 return TLSValidationResult.Failed("The server did not present a certificate!");

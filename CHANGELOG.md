@@ -89,6 +89,24 @@ independent of the S2 JSON and S2 Connect versions it implements.
   (publishes a LAN endpoint while a hosted node is ready for pairing), and the WAN endpoint registry: `WANRegistryQuery`,
   `WANRegistryClient` and the reference `WANRegistryAPI` with `InMemoryWANRegistry`; tests on the in-memory Multicast DNS
   network (discovery → pairing through `hostname.local`) and, in the `Multicast` category, over real UDP sockets.
+- Phase 10: the node layer and the samples – `AS2Node` composing the S2 Connect pairing server/client, session
+  initiation server/client, WebSocket server/client, DNS-SD advertiser and reconnecting session clients from the
+  deployment and role, with automatic session establishment on pairing and the specification's shutdown order
+  (withdraw DNS-SD → stop accepting pairing → close sessions → stop servers → flush store); `RMNode` (publishes its
+  ResourceManagerDetails, offers control types) and `CEMNode` (selects a control type, supervises sessions, revokes
+  objects); the FRBC control-type handlers `FRBCResourceManager` and `FRBCEnergyManager`; the persistent
+  `JSONFileS2Store` (atomic temp-file writes, `formatVersion`, `ISecretProtector` hook, passes the store contract
+  tests); and the `WWCP_S2_Samples` console apps (`EVChargerRM`, `PVRM`, `MinimalCEM`, `PairingTool` and a `demo`
+  running a CEM and an EV charger end to end in-process). LAN-LAN end-to-end tests over real HTTP and WebSockets.
+- Phase 11a: security hardening – the D13 spike settled the TLS chain question by measuring what a Hermod server
+  actually transmits (nothing beyond the leaf), so S2 Connect LAN endpoints present a self-signed server certificate
+  that is its own CA and peers pin its SHA-256; `TLSProfiles` (TLS 1.3 / 1.3+1.2, AEAD cipher suites, no cipher policy
+  on Windows), `SelfSignedCA` on Hermod's `PKIFactory` (self-signed server certificates with the mDNS host name as
+  subject alternative name, and a root CA for out-of-band deployments), `CertificatePinStore` (several pinned
+  fingerprints per domain name for planned rotation, constant-time comparison, JSON persistence) and
+  `S2CertificateValidator` (pin match before system trust, validity window, host name, and the D13 rule that only a
+  self-signed certificate may be pinned); wired through `AS2ConnectClient.CertificateValidator` and `AS2Node`, which
+  pins the peer's certificate fingerprints after a successful pairing and enforces them on every later connection.
 
 ### Fixed (after the phase 0–3 code review)
 

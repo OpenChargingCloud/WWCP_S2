@@ -423,6 +423,52 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         #endregion
 
+        #region Snapshot() / Load(...)
+
+        /// <summary>
+        /// A consistent snapshot of the whole store, used by persistent stores built on top of it.
+        /// </summary>
+        internal (IReadOnlyList<Pairing> Pairings,
+                  IReadOnlyList<PendingAccessToken> PendingTokens,
+                  IReadOnlyList<(Node_Id LocalNodeId, Node_Id RemoteNodeId, DateTimeOffset At)> Tombstones) Snapshot()
+        {
+            lock (lockObject)
+            {
+                return (
+                    [.. pairings.Values],
+                    [.. pendingTokens],
+                    [.. tombstones.Select(kv => (kv.Key.Item1, kv.Key.Item2, kv.Value))]
+                );
+            }
+        }
+
+        /// <summary>
+        /// Replace the whole store with the given state (used when loading a persistent store).
+        /// </summary>
+        internal void Load(IEnumerable<Pairing>                                                    Pairings,
+                           IEnumerable<PendingAccessToken>                                          PendingTokens,
+                           IEnumerable<(Node_Id LocalNodeId, Node_Id RemoteNodeId, DateTimeOffset At)>  Tombstones)
+        {
+            lock (lockObject)
+            {
+
+                pairings.     Clear();
+                pendingTokens.Clear();
+                tombstones.   Clear();
+
+                foreach (var pairing in Pairings)
+                    pairings[(pairing.LocalNodeId, pairing.RemoteNodeId)] = pairing;
+
+                pendingTokens.AddRange(PendingTokens);
+
+                foreach (var tombstone in Tombstones)
+                    tombstones[(tombstone.LocalNodeId, tombstone.RemoteNodeId)] = tombstone.At;
+
+            }
+        }
+
+        #endregion
+
     }
 
 }

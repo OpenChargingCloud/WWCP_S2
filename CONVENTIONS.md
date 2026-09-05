@@ -603,3 +603,91 @@ Folders `Connect/Pairing`, `Connect/Store`, `Connect/Security`; everything stays
   records of the queried types as known answers (the responder would suppress the answer); two Multicast DNS sockets on the
   same port of one process both receive multicasts but only one of them receives a unicast, so such tests switch
   `RequestUnicastResponses` off.
+
+## 15. S2 node layer and samples (Phase 10)
+
+Folder `Node/` (namespace `cloud.charging.open.protocols.S2.Node`); the layering test allows the node layer to
+reference every lower layer, and nothing references the node layer.
+
+* **`AS2Node : IAsyncDisposable`** composes the S2 Connect pieces from the deployment and the role and owns their
+  lifecycle. It builds a `LocalEndpoint` from `S2NodeOptions`, adds the single hosted node, and on `StartAsync`
+  creates the HTTP server (its own, or a supplied one), a `PairingServerAPI` (always, so a peer can pair), and — for a
+  communication server — a `CommunicationTokenStore`, an `S2WebSocketServer` and a `SessionInitiationServerAPI`; with a
+  service discovery it starts an `EndpointAdvertiser` (LAN only) and, for a communication client, a
+  `ReconnectingSessionClient` per stored pairing. Communication roles follow the specification: a WAN endpoint or a LAN
+  CEM is the communication server, a LAN RM is the communication client (`EnableCommunicationServer`/`Client` override it).
+* **Session establishment is automatic.** On a completed pairing (through the pairing server or `PairAsync`), a
+  communication client starts a reconnecting session client to the pairing's `InitiateSessionUrl`; a communication server
+  waits, and its WebSocket server's `OnSessionStarted` carries the `S2ConnectSessionIdentity`. Both paths produce one
+  `S2NodeSession` (session, pairing, hosted node, and — for a client — the reconnecting client) tracked per remote node
+  and announced through `OnSessionStarted`/`OnSessionEnded`. `OnSessionEstablishedAsync` is the subclass hook run before
+  the event; session configurators added with `ConfigureEverySession` run for every session.
+* **`StopAsync(drain)` stop order** (the specification's): withdraw the DNS-SD advertisement, stop accepting pairing
+  (`PairingServerAPI.ShutdownAsync` → 503) and session initiation (`Shutdown`), close the sessions with a close frame
+  within the drain (stopping the reconnecting clients first), cancel the node's linked token and stop the WebSocket and
+  HTTP servers (only a node-owned HTTP server is stopped), then flush the store (`IFlushableS2Store`).
+* **`PairAsync`** runs a `PairingClient` against a remote pairing URL (this node as pairing client); **`UnpairAsync`** is
+  role-aware: a communication client closes its session and calls the remote `/unpair` (deleting the local material), a
+  communication server unpairs locally, sends `SessionRequest RECONNECT` (whose re-initiation is answered with
+  `NoLongerPaired`) and closes the session.
+* **`RMNode`** (role RM, one CEM at a time) publishes its `ResourceManagerDetails` as soon as a session opens and offers
+  the control types registered with `RegisterControlType`; **`CEMNode`** (role CEM, many RMs) receives the details, picks
+  a control type with `SelectControlTypePolicy` (default: the first offered type the RM supports), sends the
+  `SelectControlType`, and can `RevokeAsync` objects. Control types are `IS2ControlTypeHandler`s: `FRBCResourceManager`
+  (RM side: sends the `FRBC_SystemDescription` on activation, forwards `FRBC_Instruction`s to `OnInstruction` and
+  acknowledges them with `InstructionStatusUpdate` NEW) and `FRBCEnergyManager` (CEM side: raises the RM's system
+  description, storage and actuator status and instruction updates, caching the last of each for the session).
+* **`JSONFileS2Store : IFlushableS2Store`** reuses `InMemoryS2Store` for the logic (via an internal snapshot/load seam)
+  and persists the whole state after every mutation through a temp file and an atomic `File.Move(overwrite)`. The file
+  carries `formatVersion` (1) and `secretScheme`; access tokens pass through an `ISecretProtector` (default
+  `PlaintextSecretProtector`, scheme id ""), so a deployment can encrypt them and a file protected by one scheme is not
+  silently read by another. Both built-in stores pass `S2StoreContractTests<TStore>`.
+* **Samples** (`WWCP_S2_Samples`, console): `EVChargerRM` (the FRBC worked example: off/charging modes, 1.4–11 kW,
+  battery 0–100), `PVRM` (a PEBC RM skeleton — the node composition is complete, the PEBC control-type handler is left
+  for a later phase), `MinimalCEM` (an FRBC energy manager), `PairingTool` (DNS-SD browsing) and `Program` with a `demo`
+  command that runs a CEM and an EV charger end to end in-process (discovery → pairing → session → FRBC instruction →
+  unpairing) and a `browse` command over real Multicast DNS. The README quick-start is the `RunDemoAsync` body between
+  its `README quick-start` markers.
+
+## 16. S2 Connect security hardening (Phase 11a)
+
+Folder `Connect/Security` (beside `SubnetCheck`/`ISubnetPolicy` from Phase 6).
+
+* **The D13 question was decided by measurement, not assumption.** `WWCP_S2Tests/Security/D13ChainSpikeTests.cs`
+  starts a Hermod TLS server and reads `chain.ChainPolicy.ExtraStore` in the client's validation callback — the only
+  place that shows what the peer actually transmitted. For a leaf signed by a private CA the store was **empty**:
+  Hermod calls `SslStreamCertificateContext.Create(target: leaf, additionalCertificates: null)`, so the root never
+  reaches the client. `ChainElements` did list the CA, but only because client and server shared a process and the
+  platform certificate cache — never trust `ChainElements` for this question. Hence the D13 fallback: **a LAN endpoint
+  presents one self-signed server certificate that is its own CA**, and that certificate's SHA-256 is what the
+  `certificateFingerprint` map carries and the peer pins. Rotating it requires re-pairing.
+* **`TLSProfiles`**: `Modern` = TLS 1.3, `Interoperable` = TLS 1.3 + 1.2 (the library default, because a LAN resource
+  manager may be an embedded device), `ModernCipherSuites` = AEAD only. `ApplyModernCipherSuites(SslClientAuthenticationOptions)`
+  sets the policy everywhere except on Windows, whose Schannel has none. It *applies* rather than returns the policy on
+  purpose: `CipherSuitesPolicy` is unsupported on Windows, so naming it in a public signature makes every Windows caller
+  trip CA1416. The internal guard is an inline `OperatingSystem.IsWindows()`, because the analyzer does not see through a
+  helper property. A cipher policy is only ever applied to clients — Hermod's servers expose none.
+* **`SelfSignedCA`** wraps Hermod's `PKIFactory`: `CreateSelfSignedServerCertificate(hostName, …)` is the shape S2
+  Connect LAN endpoints use (its own CA, mDNS host name as SAN, 6-month default lifetime = the Phase 11a rotation
+  interval); `CreateRootCA` and `IssueServerCertificate` build a real hierarchy for deployments that distribute the
+  root out of band, and their leaves must never be pinned.
+* **`CertificatePinStore`** maps a normalised domain name (via `ChallengeResponse.NormaliseDomainName`, the same
+  normalisation the pairing challenge uses) to one or more SHA-256 fingerprints. Several pins per host are what makes a
+  planned rotation possible: pin the new one, roll the server, drop the old one. Comparisons run in constant time and
+  every pin is compared, so the runtime does not reveal which one matched. `ToJSON`/`TryParse` persist it.
+* **`S2CertificateValidator`** replaces the operating system's judgement in a fixed order: no certificate fails; the
+  validity period is always checked; a **pinned host must present a pinned certificate — a mismatch fails even when the
+  operating system trusts the chain**, which is the whole point of pinning; an unpinned host may be system-trusted (a
+  WAN endpoint); during a pairing (`AcceptUnpinnedForPairing`) an unpinned but self-signed certificate is accepted so
+  that it can be pinned, and a CA-signed leaf is rejected with `NotSelfSigned` per D13. `IsSelfSigned` verifies the
+  signature against the certificate's own key through a one-element custom trust chain, because `Verify()` consults a
+  platform store that never holds a private root. Subject alternative names are read with
+  `X509SubjectAlternativeNameExtension.EnumerateDnsNames()`, never with `AsnEncodedData.Format`, whose output is
+  localised on Windows and may not decode this OID at all on Linux; the host name is normalised defensively, because
+  `ChallengeResponse.NormaliseDomainName` rejects an IP literal or a host with a port and a TLS callback must not throw.
+* **Wiring**: `AS2ConnectClient.CertificateValidator` is consulted for every S2 Connect HTTP client (an explicit
+  `RemoteCertificateValidator` still wins). `AS2Node` owns a `CertificatePinStore`, gives its pairing client a validator
+  with `AcceptUnpinnedForPairing: true`, pins the peer's `certificateFingerprint` map against the host of the received
+  `initiateSessionUrl` when a pairing completes, and gives its session initiation clients a validator that enforces
+  those pins. `S2NodeOptions.EnforceCertificatePinning` (default true) turns the whole mechanism off for deployments
+  that are not ready for it.
