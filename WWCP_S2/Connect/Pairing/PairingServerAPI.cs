@@ -99,6 +99,12 @@ namespace cloud.charging.open.protocols.S2.Connect
         public ISubnetPolicy          SubnetPolicy                 { get; }
 
         /// <summary>
+        /// The per-remote-address request budget of this server, or null when the rate limit
+        /// is disabled. Exposed for diagnostics and metrics.
+        /// </summary>
+        public S2RequestRateLimiter?  RequestRateLimiter           { get; }
+
+        /// <summary>
         /// The long-polling server, when long-polling is enabled.
         /// </summary>
         public LongPollingServer?     LongPollingServer            { get; }
@@ -239,6 +245,15 @@ namespace cloud.charging.open.protocols.S2.Connect
             this.logger                = LoggerFactory?.CreateLogger<PairingServerAPI>();
             this.rateLimiter           = new PairingRateLimiter(this.Options.MaxQueuedPairingAttemptsPerNode);
 
+            this.RequestRateLimiter    = this.Options.EnableRateLimiting
+                                             ? new S2RequestRateLimiter(
+                                                   "pairing",
+                                                   this.Options.RateLimitCapacity,
+                                                   this.Options.RateLimitRefillPeriod,
+                                                   this.Options.RateLimitMaxSources
+                                               )
+                                             : null;
+
             this.LANOperationsEnabled  = this.Options.EnableLANOperations ?? UsesLANChallengeResponse;
             this.SubnetPolicy          = SubnetPolicy ?? new SubnetCheck(TimeProvider: this.TimeProvider);
 
@@ -296,23 +311,48 @@ namespace cloud.charging.open.protocols.S2.Connect
         private void RegisterURLTemplates()
         {
 
+            // Every handler is wrapped into the per-source rate limit, so that a flood is
+            // refused before any parsing, store access or cryptography happens - and so that
+            // a new operation cannot be added without its rate limit.
+
             // GET {pairingUrl}  =>  ["v1"]
-            AddHandler(HTTPMethod.GET,  HTTPPath.Root,                                                 HandleVersionIndexAsync);
+            AddHandler(HTTPMethod.GET,  HTTPPath.Root,                                       RateLimited(HandleVersionIndexAsync));
 
             // Pairing process
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/requestPairing"),              HandleRequestPairingAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/requestConnectionDetails"),    HandleRequestConnectionDetailsAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/postConnectionDetails"),       HandlePostConnectionDetailsAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/finalizePairing"),             HandleFinalizePairingAsync);
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/requestPairing"),            RateLimited(HandleRequestPairingAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/requestConnectionDetails"),  RateLimited(HandleRequestConnectionDetailsAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/postConnectionDetails"),     RateLimited(HandlePostConnectionDetailsAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/finalizePairing"),           RateLimited(HandleFinalizePairingAsync));
 
             // LAN-LAN only extensions (WAN endpoints answer 404)
-            AddHandler(HTTPMethod.GET,  HTTPPath.Parse($"/{APIVersion}/endpoint"),                    HandleGetEndpointAsync);
-            AddHandler(HTTPMethod.GET,  HTTPPath.Parse($"/{APIVersion}/nodes"),                       HandleGetNodesAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/preparePairing"),              HandlePreparePairingAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/cancelPreparePairing"),        HandleCancelPreparePairingAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/waitForPairing"),              HandleWaitForPairingAsync);
+            AddHandler(HTTPMethod.GET,  HTTPPath.Parse($"/{APIVersion}/endpoint"),                  RateLimited(HandleGetEndpointAsync));
+            AddHandler(HTTPMethod.GET,  HTTPPath.Parse($"/{APIVersion}/nodes"),                     RateLimited(HandleGetNodesAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/preparePairing"),            RateLimited(HandlePreparePairingAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/cancelPreparePairing"),      RateLimited(HandleCancelPreparePairingAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/waitForPairing"),            RateLimited(HandleWaitForPairingAsync));
 
         }
+
+        /// <summary>
+        /// Wrap an HTTP handler into the per-source rate limit of this server.
+        /// </summary>
+        /// <param name="Handler">The HTTP handler to wrap.</param>
+        private HTTPDelegate RateLimited(HTTPDelegate Handler)
+
+            => async request => {
+
+                   var refusal = CheckRateLimit(request)
+                                     // The announced length is refused here, before the handler
+                                     // authenticates or parses anything: otherwise an unauthorized
+                                     // request would be answered 401 and its oversized body drained
+                                     // anyway, which is exactly what the limit exists to prevent.
+                                     ?? CheckAnnouncedRequestSize(request);
+
+                   return refusal is not null
+                              ? ResultResponse(request, refusal)
+                              : await Handler(request).ConfigureAwait(false);
+
+               };
 
         #endregion
 
@@ -682,6 +722,12 @@ namespace cloud.charging.open.protocols.S2.Connect
                     await FailAttemptAsync(attempt, PairingFailure.InvalidChallengeResponse, "the serverHmacChallengeResponse was not accepted", now).ConfigureAwait(false);
                     return PairingServerResult.Forbidden("the serverHmacChallengeResponse was not accepted");
                 }
+
+                // "This token ... should have a minimum length of 32 bytes" (S2 Connect 1.0.0,
+                // AccessToken). It is a "should", so a shorter token is accepted - but it is the
+                // peer's own credential for every later session, so its weakness is worth saying
+                // out loud rather than storing silently.
+                WarnAboutAWeakAccessToken(Request.ConnectionDetails, attempt);
 
                 attempt.MarkConnectionDetailsExchanged(null, Request.ConnectionDetails);
 
@@ -1254,8 +1300,8 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (isShutdown)
                 return ResultResponse(Request, PairingServerResult.ServiceUnavailable(TimeSpan.FromSeconds(1), "the pairing server is shut down"));
 
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
+            if (!TryReadJSONObject(Request, out var json, out var failure))
+                return ResultResponse(Request, failure);
 
             if (!RequestPairingRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1285,8 +1331,8 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (attempt is null || attempt.HasExpired(TimeProvider.GetUtcNow()))
                 return ResultResponse(Request, PairingServerResult.Unauthorized("unknown or expired pairingAttemptId"));
 
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
+            if (!TryReadJSONObject(Request, out var json, out var failure))
+                return ResultResponse(Request, failure);
 
             if (!RequestConnectionDetailsRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1317,8 +1363,8 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (attempt is null || attempt.HasExpired(TimeProvider.GetUtcNow()))
                 return ResultResponse(Request, PairingServerResult.Unauthorized("unknown or expired pairingAttemptId"));
 
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
+            if (!TryReadJSONObject(Request, out var json, out var failure))
+                return ResultResponse(Request, failure);
 
             if (!PostConnectionDetailsRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1349,8 +1395,8 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (attempt is null || attempt.HasExpired(TimeProvider.GetUtcNow()))
                 return ResultResponse(Request, PairingServerResult.Unauthorized("unknown or expired pairingAttemptId"));
 
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
+            if (!TryReadJSONObject(Request, out var json, out var failure))
+                return ResultResponse(Request, failure);
 
             if (!FinalizePairingRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1413,13 +1459,13 @@ namespace cloud.charging.open.protocols.S2.Connect
         private async Task<HTTPResponse> HandlePreparePairingAsync(HTTPRequest Request)
         {
 
-            var failure = CheckLANRequest(Request);
+            var lanFailure = CheckLANRequest(Request);
 
-            if (failure is not null)
+            if (lanFailure is not null)
+                return ResultResponse(Request, lanFailure);
+
+            if (!TryReadJSONObject(Request, out var json, out var failure))
                 return ResultResponse(Request, failure);
-
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
 
             if (!PreparePairingRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1440,13 +1486,13 @@ namespace cloud.charging.open.protocols.S2.Connect
         private async Task<HTTPResponse> HandleCancelPreparePairingAsync(HTTPRequest Request)
         {
 
-            var failure = CheckLANRequest(Request);
+            var lanFailure = CheckLANRequest(Request);
 
-            if (failure is not null)
+            if (lanFailure is not null)
+                return ResultResponse(Request, lanFailure);
+
+            if (!TryReadJSONObject(Request, out var json, out var failure))
                 return ResultResponse(Request, failure);
-
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
 
             if (!CancelPreparePairingRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1467,13 +1513,13 @@ namespace cloud.charging.open.protocols.S2.Connect
         private async Task<HTTPResponse> HandleWaitForPairingAsync(HTTPRequest Request)
         {
 
-            var failure = CheckLANRequest(Request);
+            var lanFailure = CheckLANRequest(Request);
 
-            if (failure is not null)
+            if (lanFailure is not null)
+                return ResultResponse(Request, lanFailure);
+
+            if (!TryReadJSONArray(Request, out var json, out var failure))
                 return ResultResponse(Request, failure);
-
-            if (!TryReadJSONArray(Request, out var json, out var error))
-                return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(error)));
 
             if (!WaitForPairingRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, PairingServerResult.BadRequest(PairingResponseError.ParsingError, Info(parseError)));
@@ -1511,21 +1557,21 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         #endregion
 
-        #region (private static) TryReadJSONObject / TryReadJSONArray(Request, out JSON, out Error)
+        #region (private) TryReadJSONObject / TryReadJSONArray(Request, out JSON, out Failure)
 
-        private static Boolean TryReadJSONObject(HTTPRequest                       Request,
-                                                 [NotNullWhen(true)]  out JObject?  JSON,
-                                                 [NotNullWhen(false)] out String?   Error)
+        private Boolean TryReadJSONObject(HTTPRequest                            Request,
+                                          [NotNullWhen(true)]  out JObject?              JSON,
+                                          [NotNullWhen(false)] out PairingServerResult?  Failure)
         {
 
             JSON = null;
 
-            if (!TryReadJSON(Request, out var token, out Error))
+            if (!TryReadJSON(Request, out var token, out Failure))
                 return false;
 
             if (token is not JObject jsonObject)
             {
-                Error = "a JSON object is expected";
+                Failure = BadRequestResult("a JSON object is expected");
                 return false;
             }
 
@@ -1534,19 +1580,19 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         }
 
-        private static Boolean TryReadJSONArray(HTTPRequest                      Request,
-                                                [NotNullWhen(true)]  out JArray?  JSON,
-                                                [NotNullWhen(false)] out String?  Error)
+        private Boolean TryReadJSONArray(HTTPRequest                           Request,
+                                         [NotNullWhen(true)]  out JArray?              JSON,
+                                         [NotNullWhen(false)] out PairingServerResult?  Failure)
         {
 
             JSON = null;
 
-            if (!TryReadJSON(Request, out var token, out Error))
+            if (!TryReadJSON(Request, out var token, out Failure))
                 return false;
 
             if (token is not JArray jsonArray)
             {
-                Error = "a JSON array is expected";
+                Failure = BadRequestResult("a JSON array is expected");
                 return false;
             }
 
@@ -1555,9 +1601,9 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         }
 
-        private static Boolean TryReadJSON(HTTPRequest                      Request,
-                                           [NotNullWhen(true)]  out JToken?  JSON,
-                                           [NotNullWhen(false)] out String?  Error)
+        private Boolean TryReadJSON(HTTPRequest                           Request,
+                                    [NotNullWhen(true)]  out JToken?              JSON,
+                                    [NotNullWhen(false)] out PairingServerResult?  Failure)
         {
 
             JSON = null;
@@ -1565,15 +1611,47 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (Request.ContentType is not null &&
                 Request.ContentType != HTTPContentType.Application.JSON_UTF8)
             {
-                Error = $"unsupported content type '{Request.ContentType.MediaType}', 'application/json' is expected";
+                Failure = BadRequestResult($"unsupported content type '{Request.ContentType.MediaType}', 'application/json' is expected");
                 return false;
             }
 
-            var body = Request.HTTPBody;
+            // The announced length is checked before the body is touched, so that an oversized
+            // request costs nothing beyond reading its headers.
+            if (Request.ContentLength > (UInt64) Options.MaxRequestBodySize)
+            {
+                Failure = TooLargeResult();
+                return false;
+            }
+
+            Byte[]? body;
+
+            try
+            {
+                body = Request.HTTPBody;
+            }
+            catch (HTTPBodyTooLargeException)
+            {
+                // The HTTP server refused the body while reading it (chunked requests announce
+                // no length), before this API ever saw it.
+                Failure = TooLargeResult();
+                return false;
+            }
+            catch (Exception e)
+            {
+                Failure = BadRequestResult("the request body could not be read: " + e.Message);
+                return false;
+            }
 
             if (body is null || body.Length == 0)
             {
-                Error = "the request body is empty";
+                Failure = BadRequestResult("the request body is empty");
+                return false;
+            }
+
+            // A chunked request announces no length, so the received body is checked as well.
+            if (body.Length > Options.MaxRequestBodySize)
+            {
+                Failure = TooLargeResult();
                 return false;
             }
 
@@ -1589,21 +1667,109 @@ namespace cloud.charging.open.protocols.S2.Connect
 
                 if (reader.Read())
                 {
-                    JSON   = null;
-                    Error  = "additional content after the JSON document";
+                    JSON     = null;
+                    Failure  = BadRequestResult("additional content after the JSON document");
                     return false;
                 }
 
-                Error = null;
+                Failure = null;
                 return true;
 
             }
             catch (Exception e)
             {
-                JSON   = null;
-                Error  = "invalid JSON: " + e.Message;
+                JSON     = null;
+                Failure  = BadRequestResult("invalid JSON: " + e.Message);
                 return false;
             }
+
+        }
+
+        private PairingServerResult BadRequestResult(String Error)
+
+            => PairingServerResult.BadRequest(
+                   PairingResponseError.ParsingError,
+                   Info(Error)
+               );
+
+        private PairingServerResult TooLargeResult()
+
+            => PairingServerResult.PayloadTooLarge(
+                   Options.MaxRequestBodySize,
+                   Info($"the request body must not exceed {Options.MaxRequestBodySize} bytes")
+               );
+
+        #endregion
+
+        #region (private) WarnAboutAWeakAccessToken(ConnectionDetails, Attempt)
+
+        /// <summary>
+        /// Log a warning when a peer announces an access token below the length the
+        /// specification recommends ("should have a minimum length of 32 bytes"). The token is
+        /// still accepted: the recommendation is not a requirement, and refusing it would break
+        /// a pairing over a detail the peer alone controls.
+        /// </summary>
+        /// <param name="ConnectionDetails">The received connection details.</param>
+        /// <param name="Attempt">The pairing attempt they belong to.</param>
+        private void WarnAboutAWeakAccessToken(ConnectionDetails  ConnectionDetails,
+                                               PairingAttempt     Attempt)
+        {
+
+            if (ConnectionDetails.AccessToken.Length < S2ConnectDefaults.MinAccessTokenLength)
+                logger?.LogWarning(
+                    "S2 pairing server: {Attempt}: the peer announced an access token of {Length} bytes, but the specification recommends at least {Recommended}.",
+                    Attempt,
+                    ConnectionDetails.AccessToken.Length,
+                    S2ConnectDefaults.MinAccessTokenLength
+                );
+
+        }
+
+        #endregion
+
+        #region (private) CheckAnnouncedRequestSize(Request)
+
+        /// <summary>
+        /// Refuse a request whose announced Content-Length exceeds the configured limit, before
+        /// anything reads its body. Returns the refusal, or null when the request may proceed.
+        /// </summary>
+        /// <param name="Request">An HTTP request.</param>
+        private PairingServerResult? CheckAnnouncedRequestSize(HTTPRequest Request)
+
+            => Request.ContentLength > (UInt64) Options.MaxRequestBodySize
+                   ? TooLargeResult()
+                   : null;
+
+        #endregion
+
+        #region (private) CheckRateLimit(Request)
+
+        /// <summary>
+        /// Take one token from the request budget of the remote address of the given request.
+        /// Returns the refusal when the budget is exhausted, otherwise null.
+        /// </summary>
+        /// <param name="Request">An HTTP request.</param>
+        private PairingServerResult? CheckRateLimit(HTTPRequest Request)
+        {
+
+            if (RequestRateLimiter is null)
+                return null;
+
+            var remoteAddress  = RemoteAddressOf(Request);
+            var decision       = RequestRateLimiter.TryAcquire(remoteAddress, TimeProvider.GetUtcNow());
+
+            if (decision.Allowed)
+                return null;
+
+            logger?.LogWarning(
+                "S2 pairing server: the request budget of {RemoteAddress} is exhausted, retry in {RetryAfter} seconds.",
+                remoteAddress?.ToString() ?? S2RequestRateLimiter.UnknownAddress,
+                Math.Ceiling(decision.RetryAfter.TotalSeconds)
+            );
+
+            return Options.UseTooManyRequestsStatusCode
+                       ? PairingServerResult.TooManyRequests   (decision.RetryAfter, "the request budget of the remote address is exhausted")
+                       : PairingServerResult.ServiceUnavailable(decision.RetryAfter, "the request budget of the remote address is exhausted");
 
         }
 
@@ -1654,7 +1820,11 @@ namespace cloud.charging.open.protocols.S2.Connect
                                             JToken?              Content   = null)
         {
 
-            var builder = NewResponse(Request, Result.StatusCode);
+            var builder = NewResponse(
+                              Request,
+                              Result.StatusCode,
+                              DrainRequestBody: Result.StatusCode != HTTPStatusCode.RequestEntityTooLarge
+                          );
 
             if (Result.StatusCode == HTTPStatusCode.Unauthorized)
                 builder.WWWAuthenticate = WWWAuthenticate.Parse("Bearer realm=\"S2 Connect pairing\"");
@@ -1700,28 +1870,36 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         #endregion
 
-        #region (private) NewResponse(Request, StatusCode)
+        #region (private) NewResponse(Request, StatusCode, DrainRequestBody = true)
 
         private HTTPResponse.Builder NewResponse(HTTPRequest     Request,
-                                                 HTTPStatusCode  StatusCode)
+                                                 HTTPStatusCode  StatusCode,
+                                                 Boolean         DrainRequestBody   = true)
         {
 
             // An early answer (401, 404, ...) leaves the request body unread; drain it, so that
             // its remains are not mistaken for the next request on a keep-alive connection.
-            try
+            // An oversized body is the exception: reading it is exactly what the refusal avoids,
+            // so that answer closes the connection instead (as Hermod's own 413 does).
+            if (DrainRequestBody)
             {
-                Request.TryReadHTTPBodyStream();
-            }
-            catch (Exception e)
-            {
-                logger?.LogDebug(e, "S2 pairing server: could not drain the request body.");
+                try
+                {
+                    Request.TryReadHTTPBodyStream();
+                }
+                catch (Exception e)
+                {
+                    logger?.LogDebug(e, "S2 pairing server: could not drain the request body.");
+                }
             }
 
             var builder = new HTTPResponse.Builder(Request) {
                               HTTPStatusCode  = StatusCode,
                               Server          = HTTPServiceName,
                               Date            = org.GraphDefined.Vanaheimr.Illias.Timestamp.Now,
-                              Connection      = ConnectionType.KeepAlive
+                              Connection      = DrainRequestBody
+                                                    ? ConnectionType.KeepAlive
+                                                    : ConnectionType.Close
                           };
 
             // Responses carry secrets (pairingAttemptId, access tokens) and must never be cached.

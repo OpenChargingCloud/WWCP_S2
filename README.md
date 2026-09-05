@@ -29,7 +29,7 @@ decisions and the phase status. Nothing in this repository is production ready y
 | 8 | S2 Connect session initiation with access-token rotation, unpairing in both directions, reconnection strategy | done |
 | 9 | Discovery: Multicast DNS and DNS-SD in Hermod, S2 endpoint advertiser and browser with `.local` resolution, in-memory service discovery, WAN endpoint registry client and reference API | done |
 | 10 | Node layer (`AS2Node`, `RMNode`, `CEMNode`) composing pairing, session initiation, WebSocket and discovery with automatic sessions and an ordered shutdown; FRBC control-type handlers; `JSONFileS2Store`; sample console apps | done |
-| 11a | Security hardening: TLS profiles, self-signed CA, certificate pin store and validator, the D13 chain spike and its decision | done |
+| 11a | Security hardening: TLS profiles, self-signed CA, certificate pin store and validator, the D13 chain spike and its decision, per-source rate limiting, request and message size limits, the log redaction layer with fuzz and negative suites | done |
 | 12 | Documentation and packaging | planned |
 
 Every serialised message and data structure is validated against the embedded s2-json v1.0.0

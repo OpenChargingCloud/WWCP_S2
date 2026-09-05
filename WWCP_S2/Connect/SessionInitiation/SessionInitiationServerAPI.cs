@@ -100,6 +100,12 @@ namespace cloud.charging.open.protocols.S2.Connect
         public TimeProvider                     TimeProvider            { get; }
 
         /// <summary>
+        /// The per-remote-address request budget of this server, or null when the rate limit
+        /// is disabled. Exposed for diagnostics and metrics.
+        /// </summary>
+        public S2RequestRateLimiter?            RequestRateLimiter      { get; }
+
+        /// <summary>
         /// The versions of the session initiation API served by this server (the version index).
         /// </summary>
         public IReadOnlyList<String>            SupportedAPIVersions
@@ -191,6 +197,15 @@ namespace cloud.charging.open.protocols.S2.Connect
             this.TimeProvider  = TimeProvider ?? Endpoint.TimeProvider;
             this.logger        = LoggerFactory?.CreateLogger<SessionInitiationServerAPI>();
 
+            this.RequestRateLimiter  = this.Options.EnableRateLimiting
+                                           ? new S2RequestRateLimiter(
+                                                 "sessionInitiation",
+                                                 this.Options.RateLimitCapacity,
+                                                 this.Options.RateLimitRefillPeriod,
+                                                 this.Options.RateLimitMaxSources
+                                             )
+                                           : null;
+
             RegisterURLTemplates();
 
         }
@@ -223,12 +238,34 @@ namespace cloud.charging.open.protocols.S2.Connect
         private void RegisterURLTemplates()
         {
 
-            AddHandler(HTTPMethod.GET,  HTTPPath.Root,                                          HandleVersionIndexAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/initiateSession"),      HandleInitiateSessionAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/confirmAccessToken"),   HandleConfirmAccessTokenAsync);
-            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/unpair"),               HandleUnpairAsync);
+            // Every handler is wrapped into the per-source rate limit, so that a flood is
+            // refused before any parsing, store access or cryptography happens.
+            AddHandler(HTTPMethod.GET,  HTTPPath.Root,                                        RateLimited(HandleVersionIndexAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/initiateSession"),     RateLimited(HandleInitiateSessionAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/confirmAccessToken"),  RateLimited(HandleConfirmAccessTokenAsync));
+            AddHandler(HTTPMethod.POST, HTTPPath.Parse($"/{APIVersion}/unpair"),              RateLimited(HandleUnpairAsync));
 
         }
+
+        /// <summary>
+        /// Wrap an HTTP handler into the per-source rate limit of this server.
+        /// </summary>
+        /// <param name="Handler">The HTTP handler to wrap.</param>
+        private HTTPDelegate RateLimited(HTTPDelegate Handler)
+
+            => async request => {
+
+                   var refusal = CheckRateLimit(request)
+                                     // The announced length is refused here, before the handler
+                                     // authenticates or parses anything - and this is also what
+                                     // bounds confirmAccessToken, which reads no body at all.
+                                     ?? CheckAnnouncedRequestSize(request);
+
+                   return refusal is not null
+                              ? ResultResponse(request, refusal)
+                              : await Handler(request).ConfigureAwait(false);
+
+               };
 
         #endregion
 
@@ -612,8 +649,8 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (!TryGetBearerToken(Request, out var bearer))
                 return ResultResponse(Request, SessionInitiationResult.Unauthorized("missing or malformed access token"));
 
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, SessionInitiationResult.BadRequest(CommunicationDetailsError.ParsingError, Info(error)));
+            if (!TryReadJSONObject(Request, out var json, out var failure))
+                return ResultResponse(Request, failure);
 
             if (!InitiateSessionRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, SessionInitiationResult.BadRequest(CommunicationDetailsError.ParsingError, Info(parseError)));
@@ -655,8 +692,8 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (!TryGetBearerToken(Request, out var bearer))
                 return ResultResponse(Request, SessionInitiationResult.Unauthorized("missing or malformed access token"));
 
-            if (!TryReadJSONObject(Request, out var json, out var error))
-                return ResultResponse(Request, SessionInitiationResult.BadRequest(CommunicationDetailsError.ParsingError, Info(error)));
+            if (!TryReadJSONObject(Request, out var json, out var failure))
+                return ResultResponse(Request, failure);
 
             if (!UnpairRequest.TryParse(json, out var request, out var parseError, Options.ParserOptions))
                 return ResultResponse(Request, SessionInitiationResult.BadRequest(CommunicationDetailsError.ParsingError, Info(parseError)));
@@ -707,11 +744,11 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         #endregion
 
-        #region (private static) TryReadJSONObject(Request, out JSON, out Error)
+        #region (private) TryReadJSONObject(Request, out JSON, out Failure)
 
-        private static Boolean TryReadJSONObject(HTTPRequest                       Request,
-                                                 [NotNullWhen(true)]  out JObject?  JSON,
-                                                 [NotNullWhen(false)] out String?   Error)
+        private Boolean TryReadJSONObject(HTTPRequest                                Request,
+                                          [NotNullWhen(true)]  out JObject?                  JSON,
+                                          [NotNullWhen(false)] out SessionInitiationResult?  Failure)
         {
 
             JSON = null;
@@ -719,15 +756,47 @@ namespace cloud.charging.open.protocols.S2.Connect
             if (Request.ContentType is not null &&
                 Request.ContentType != HTTPContentType.Application.JSON_UTF8)
             {
-                Error = $"unsupported content type '{Request.ContentType.MediaType}', 'application/json' is expected";
+                Failure = BadRequestResult($"unsupported content type '{Request.ContentType.MediaType}', 'application/json' is expected");
                 return false;
             }
 
-            var body = Request.HTTPBody;
+            // The announced length is checked before the body is touched, so that an oversized
+            // request costs nothing beyond reading its headers.
+            if (Request.ContentLength > (UInt64) Options.MaxRequestBodySize)
+            {
+                Failure = TooLargeResult();
+                return false;
+            }
+
+            Byte[]? body;
+
+            try
+            {
+                body = Request.HTTPBody;
+            }
+            catch (HTTPBodyTooLargeException)
+            {
+                // The HTTP server refused the body while reading it (chunked requests announce
+                // no length), before this API ever saw it.
+                Failure = TooLargeResult();
+                return false;
+            }
+            catch (Exception e)
+            {
+                Failure = BadRequestResult("the request body could not be read: " + e.Message);
+                return false;
+            }
 
             if (body is null || body.Length == 0)
             {
-                Error = "the request body is empty";
+                Failure = BadRequestResult("the request body is empty");
+                return false;
+            }
+
+            // A chunked request announces no length, so the received body is checked as well.
+            if (body.Length > Options.MaxRequestBodySize)
+            {
+                Failure = TooLargeResult();
                 return false;
             }
 
@@ -743,26 +812,88 @@ namespace cloud.charging.open.protocols.S2.Connect
 
                 if (reader.Read())
                 {
-                    Error = "additional content after the JSON document";
+                    Failure = BadRequestResult("additional content after the JSON document");
                     return false;
                 }
 
                 if (token is not JObject jsonObject)
                 {
-                    Error = "a JSON object is expected";
+                    Failure = BadRequestResult("a JSON object is expected");
                     return false;
                 }
 
-                JSON   = jsonObject;
-                Error  = null;
+                JSON     = jsonObject;
+                Failure  = null;
                 return true;
 
             }
             catch (Exception e)
             {
-                Error = "invalid JSON: " + e.Message;
+                Failure = BadRequestResult("invalid JSON: " + e.Message);
                 return false;
             }
+
+        }
+
+        private SessionInitiationResult BadRequestResult(String Error)
+
+            => SessionInitiationResult.BadRequest(
+                   CommunicationDetailsError.ParsingError,
+                   Info(Error)
+               );
+
+        private SessionInitiationResult TooLargeResult()
+
+            => SessionInitiationResult.PayloadTooLarge(
+                   Options.MaxRequestBodySize,
+                   Info($"the request body must not exceed {Options.MaxRequestBodySize} bytes")
+               );
+
+        #endregion
+
+        #region (private) CheckAnnouncedRequestSize(Request)
+
+        /// <summary>
+        /// Refuse a request whose announced Content-Length exceeds the configured limit, before
+        /// anything reads its body. Returns the refusal, or null when the request may proceed.
+        /// </summary>
+        /// <param name="Request">An HTTP request.</param>
+        private SessionInitiationResult? CheckAnnouncedRequestSize(HTTPRequest Request)
+
+            => Request.ContentLength > (UInt64) Options.MaxRequestBodySize
+                   ? TooLargeResult()
+                   : null;
+
+        #endregion
+
+        #region (private) CheckRateLimit(Request)
+
+        /// <summary>
+        /// Take one token from the request budget of the remote address of the given request.
+        /// Returns the refusal when the budget is exhausted, otherwise null.
+        /// </summary>
+        /// <param name="Request">An HTTP request.</param>
+        private SessionInitiationResult? CheckRateLimit(HTTPRequest Request)
+        {
+
+            if (RequestRateLimiter is null)
+                return null;
+
+            var remoteAddress  = RemoteAddressOf(Request);
+            var decision       = RequestRateLimiter.TryAcquire(remoteAddress, TimeProvider.GetUtcNow());
+
+            if (decision.Allowed)
+                return null;
+
+            logger?.LogWarning(
+                "S2 session initiation: the request budget of {RemoteAddress} is exhausted, retry in {RetryAfter} seconds.",
+                remoteAddress?.ToString() ?? S2RequestRateLimiter.UnknownAddress,
+                Math.Ceiling(decision.RetryAfter.TotalSeconds)
+            );
+
+            return Options.UseTooManyRequestsStatusCode
+                       ? SessionInitiationResult.TooManyRequests   (decision.RetryAfter, "the request budget of the remote address is exhausted")
+                       : SessionInitiationResult.ServiceUnavailable(decision.RetryAfter, "the request budget of the remote address is exhausted");
 
         }
 
@@ -799,7 +930,11 @@ namespace cloud.charging.open.protocols.S2.Connect
                                             JToken?                  Content   = null)
         {
 
-            var builder = NewResponse(Request, Result.StatusCode);
+            var builder = NewResponse(
+                              Request,
+                              Result.StatusCode,
+                              DrainRequestBody: Result.StatusCode != HTTPStatusCode.RequestEntityTooLarge
+                          );
 
             if (Result.StatusCode == HTTPStatusCode.Unauthorized)
                 builder.WWWAuthenticate = WWWAuthenticate.Parse("Bearer realm=\"S2 Connect session initiation\"");
@@ -838,24 +973,32 @@ namespace cloud.charging.open.protocols.S2.Connect
         }
 
         private HTTPResponse.Builder NewResponse(HTTPRequest     Request,
-                                                 HTTPStatusCode  StatusCode)
+                                                 HTTPStatusCode  StatusCode,
+                                                 Boolean         DrainRequestBody   = true)
         {
 
-            // Drain an unread request body, so that its remains are not mistaken for the next request.
-            try
+            // Drain an unread request body, so that its remains are not mistaken for the next
+            // request. An oversized body is the exception: reading it is exactly what the refusal
+            // avoids, so that answer closes the connection instead.
+            if (DrainRequestBody)
             {
-                Request.TryReadHTTPBodyStream();
-            }
-            catch (Exception e)
-            {
-                logger?.LogDebug(e, "S2 session initiation server: could not drain the request body.");
+                try
+                {
+                    Request.TryReadHTTPBodyStream();
+                }
+                catch (Exception e)
+                {
+                    logger?.LogDebug(e, "S2 session initiation server: could not drain the request body.");
+                }
             }
 
             var builder = new HTTPResponse.Builder(Request) {
                               HTTPStatusCode  = StatusCode,
                               Server          = HTTPServiceName,
                               Date            = org.GraphDefined.Vanaheimr.Illias.Timestamp.Now,
-                              Connection      = ConnectionType.KeepAlive
+                              Connection      = DrainRequestBody
+                                                    ? ConnectionType.KeepAlive
+                                                    : ConnectionType.Close
                           };
 
             // Responses carry secrets (access and communication tokens) and must never be cached.

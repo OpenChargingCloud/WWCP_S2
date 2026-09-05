@@ -691,3 +691,61 @@ Folder `Connect/Security` (beside `SubnetCheck`/`ISubnetPolicy` from Phase 6).
   `initiateSessionUrl` when a pairing completes, and gives its session initiation clients a validator that enforces
   those pins. `S2NodeOptions.EnforceCertificatePinning` (default true) turns the whole mechanism off for deployments
   that are not ready for it.
+* **`S2RequestRateLimiter`** is a per-remote-address token bucket (Hermod's `InMemoryTokenBucketRateLimiter`) in front
+  of *every* route of the pairing and the session initiation server. It is denial-of-service protection and must not be
+  confused with `PairingRateLimiter`, which implements the normative "one pairing attempt per node per second" and stays
+  in force independently. Both APIs wrap their handlers in one place (`RateLimited(HTTPDelegate)` inside
+  `RegisterURLTemplates`), so a request is refused **before** parsing, store access and cryptography — and so a new
+  operation cannot be added without its rate limit. The number of buckets is bounded, so spoofed source addresses cannot
+  turn the limiter into a memory exhaustion attack; beyond the bound unknown addresses are refused. The refusal is
+  **503 with `Retry-After`** by default, because that is the only overload answer the specification defines (for
+  `requestPairing` and `waitForPairing`) and every S2 Connect client already retries after it; `UseTooManyRequestsStatusCode`
+  switches it to the semantically precise 429. Defaults: 300 requests/minute for pairing, 120 for session initiation
+  and 300 for the WAN registry API, which answers the whole internet and is limited the same way. On the client
+  side 429 is treated exactly like 503 (`AS2ConnectClient` retries it honouring `Retry-After`, the pairing and
+  session initiation clients report it as "temporarily unavailable"), so a peer that answers the precise code
+  does not break a client that expected the specified one. The bucket key is the peer of the TCP connection and a
+  forwarded-for header is deliberately not trusted (anyone could set it and buy a fresh budget per request), so a
+  deployment behind a reverse proxy either raises the capacity or rate limits at the proxy and disables this one.
+  Two things the limiter cannot cover, by construction: an unregistered path and a wrong method on a registered path
+  are answered by the HTTP server before any handler of the API runs. And `BucketLifetime` must never be shorter than
+  `RefillPeriod` — a bucket forgotten before it has refilled hands out a fresh, full budget, so an address would reset
+  its budget by pausing; the constructor refuses that combination.
+* **Request size limits** exist at two levels. Hermod's `MaxHTTPBodySize` (set from `S2NodeOptions.MaxHTTPBodySize`,
+  default 1 MiB) refuses an oversized body while reading it, before the API sees it; the APIs enforce their own, much
+  smaller `MaxRequestBodySize` (default 64 KiB). The announced `Content-Length` is checked in the same wrapper as the
+  rate limit, i.e. **before the handler authenticates or parses anything** — otherwise an unauthorized oversized request
+  would be answered 401 and its body drained anyway, which is exactly what the limit exists to prevent; it is also what
+  bounds `confirmAccessToken`, which reads no body at all. The received body is checked again inside `TryReadJSON`,
+  because a chunked request announces no length. `Request.HTTPBody` can throw `HTTPBodyTooLargeException`, so the body
+  access is wrapped and mapped to 413 rather than escaping the handler. Note what this bound also buys: an S2 identifier
+  follows JSON Schema semantics and is therefore unanchored and unbounded free text (`S2_Id`), so the request size limit
+  is the only thing that caps how long one can be - treat every identifier as untrusted text when logging or persisting it.
+  A 413 is the one answer that does **not** drain
+  the request body — reading it is what the refusal avoids — so it closes the connection, as Hermod's own 413 does. The
+  WebSocket side is bounded by `MaxTextMessageSizeIn`/`Out` (`S2NodeOptions.MaxWebSocketMessageSize`, default 1 MiB) on
+  the server and, via `SessionInitiationClientOptions.MaxWebSocketMessageSize`, on the client; an oversized message
+  closes the connection with 1009.
+* **`S2LogRedaction`** masks three shapes, because a secret reaches a log in all three: a secret JSON property, an
+  HTTP `Authorization` header (the scheme is kept, it is diagnostic and not secret) and an unquoted `name=value` or
+  `name: value` pair (log messages and query strings). It never throws — a `RegexMatchTimeoutException` returns the mask
+  rather than the text, so a pathological input cannot leak by breaking the redaction. `RedactJSON` returns a masked deep
+  copy and leaves the input alone. The overload is named `RedactJSON` and not `Redact`, so that `Redact(null)` is not
+  ambiguous at the call site. `Fingerprint(secret)` is the truncated SHA-256 for audit records (PLAN.md §3.6).
+* **`S2RedactingLogger`/`S2RedactingLoggerFactory`** decorate an `ILogger`/`ILoggerFactory`: both the formatted message
+  and the *structured state* are redacted, because a JSON or OpenTelemetry sink renders the state and never the message.
+  The message is **rendered from the redacted values**, not by running the already formatted text through the textual
+  redaction: `LogInformation("token {Token} of {NodeId}", secret, id)` produces none of the three shapes, so the secret
+  would survive in the message while the state of the very same entry was masked. Rendering replaces each placeholder
+  name by its position (`{Count,5:N0}` → `{0,5:N0}`), so alignments and format specifiers survive; anything that cannot
+  be rendered falls back to the redacted output of the original formatter. A plain text state is replaced by its
+  redacted text; any other state object is forwarded unchanged, because replacing it would break every sink that casts
+  it back to its own type.
+  `{OriginalFormat}` is passed through unchanged (it is the template, which holds names, not values), and a value type is
+  passed through untouched. `AS2Node` wraps the logger factory it is given (`S2NodeOptions.RedactSecretsInLogs`, default
+  true), so every component it composes logs redacted. `WithS2Redaction()` never wraps twice. The one thing it cannot
+  rewrite is a logged `Exception`: its message is read-only and wrapping it would destroy the type a sink filters on
+  and the stack trace it prints — hence the rule that the library never puts request content into an exception it logs.
+  The second rule the layer rests on: **every type that holds a secret redacts its own `ToString()`** — no redaction can
+  mask a bare token logged without its property name, so a new secret-bearing type (struct or class) must redact itself. This is the second line of
+  defence: every type holding a secret already redacts its own `ToString()` and the library logs no request bodies.

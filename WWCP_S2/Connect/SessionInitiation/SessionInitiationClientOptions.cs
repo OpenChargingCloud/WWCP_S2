@@ -75,6 +75,13 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// </summary>
         public TimeSpan               WebSocketPingInterval                { get; init; } = S2ConnectDefaults.WebSocketPingInterval;
 
+        /// <summary>
+        /// The maximal size of a WebSocket message of an opened session (default: null, i.e.
+        /// the limit of the transport). A larger message closes the connection with 1009
+        /// "message too big", so that a peer cannot make this client buffer without bound.
+        /// </summary>
+        public UInt64?                MaxWebSocketMessageSize              { get; init; }
+
         #endregion
 
         #region (static) Default

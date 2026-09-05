@@ -592,7 +592,10 @@ namespace cloud.charging.open.protocols.S2.Connect
 
                 }
 
-                if (result.StatusCode != HTTPStatusCode.ServiceUnavailable || attempt >= MaxServiceUnavailableRetries)
+                // 429 is retried like 503: a rate limited peer is a temporarily unavailable peer,
+                // and both answers carry the Retry-After this loop honours.
+                if ((result.StatusCode != HTTPStatusCode.ServiceUnavailable &&
+                     result.StatusCode != HTTPStatusCode.TooManyRequests) || attempt >= MaxServiceUnavailableRetries)
                     return result;
 
                 attempt++;
@@ -602,7 +605,7 @@ namespace cloud.charging.open.protocols.S2.Connect
                 if (Deadline.HasValue && TimeProvider.GetUtcNow() + delay >= Deadline.Value)
                     return result;
 
-                Logger?.LogInformation("S2 Connect client: {Operation} answered 503, retry {Attempt} after {Delay}.", Operation, attempt, delay);
+                Logger?.LogInformation("S2 Connect client: {Operation} answered {StatusCode}, retry {Attempt} after {Delay}.", Operation, result.StatusCode.Code, attempt, delay);
 
                 if (delay > TimeSpan.Zero)
                     await Task.Delay(delay, TimeProvider, CancellationToken).ConfigureAwait(false);

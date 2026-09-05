@@ -17,7 +17,7 @@ concurrency:
 # deliberately.
 env:
   STYX_REF: 0f40d614a9b3f7562193f2ed6ae94fb4685fa6fe
-  HERMOD_REF: b91cf73d4caef4001c445bb110babf6923264d1c
+  HERMOD_REF: 368fa179ace8ccf0f2ea662bfed75a3e8044cda3
 
 jobs:
   build-and-test:

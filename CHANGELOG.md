@@ -107,6 +107,21 @@ independent of the S2 JSON and S2 Connect versions it implements.
   `S2CertificateValidator` (pin match before system trust, validity window, host name, and the D13 rule that only a
   self-signed certificate may be pinned); wired through `AS2ConnectClient.CertificateValidator` and `AS2Node`, which
   pins the peer's certificate fingerprints after a successful pairing and enforces them on every later connection.
+- Phase 11a (continued): denial-of-service hardening and the redaction layer – `S2RequestRateLimiter`, a per-remote-address
+  token bucket in front of every route of the pairing and the session initiation server (refused before parsing, store
+  access and cryptography; bounded number of buckets; 503 with `Retry-After` by default, 429 on request; 300 requests per
+  minute for pairing, 120 for session initiation, 300 for the WAN registry API; the clients retry a 429 exactly like a 503, honouring `Retry-After`), request size limits at the HTTP server (`S2NodeOptions.MaxHTTPBodySize`,
+  1 MiB) and inside each API (`MaxRequestBodySize`, 64 KiB, answered with 413 in the S2 error shape; the announced
+  `Content-Length` is refused before authentication and parsing, and that answer closes the connection instead of
+  draining the oversized body), WebSocket message
+  size limits on both sides (`MaxWebSocketMessageSize`, 1 MiB, closing with 1009), and `S2LogRedaction` /
+  `S2RedactingLogger` / `S2RedactingLoggerFactory`, which mask secret JSON properties, `Authorization` headers and
+  `name=value` pairs in the structured state of every log entry and render its message from the redacted values; `AS2Node` wraps the
+  logger factory it is given, so all its components log redacted (`S2NodeOptions.RedactSecretsInLogs`, default true).
+  `S2LogRedaction.Fingerprint` gives audit records a truncated SHA-256 reference to a token. Covered by fuzz and negative
+  suites for both APIs and the message parser, and by an end-to-end test that greps the log of a complete pairing,
+  session and unpairing run for every secret it knows. A peer announcing an access token below the 32 bytes the
+  specification recommends is accepted ("should", not "must") but logged as weak.
 
 ### Fixed (after the phase 0–3 code review)
 

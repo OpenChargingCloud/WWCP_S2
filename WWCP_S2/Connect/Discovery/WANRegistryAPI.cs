@@ -221,7 +221,14 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// </summary>
         public     const String  APIVersion              = Version.S2ConnectAPIVersion;
 
-        private readonly ILogger? logger;
+        /// <summary>
+        /// The default number of requests one remote address may send per minute: 300.
+        /// A WAN registry is reachable from the whole internet, so it is rate limited by default.
+        /// </summary>
+        public     const Int32   DefaultRateLimitCapacity  = 300;
+
+        private readonly ILogger?               logger;
+        private readonly S2RequestRateLimiter?  requestRateLimiter;
 
         #endregion
 
@@ -247,6 +254,8 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <param name="HTTPServer">The HTTP server.</param>
         /// <param name="Registry">The endpoint records.</param>
         /// <param name="RootPath">An optional root path (default: "/"); it always ends with a slash.</param>
+        /// <param name="RateLimitCapacity">The number of requests one remote address may send per <paramref name="RateLimitRefillPeriod"/> (default: 300); zero or less disables the rate limit.</param>
+        /// <param name="RateLimitRefillPeriod">The period within which the request budget of a remote address refills completely (default: one minute).</param>
         /// <param name="LoggerFactory">An optional logger factory.</param>
         /// <param name="HTTPServerName">An optional HTTP server name.</param>
         /// <param name="HTTPServiceName">An optional HTTP service name.</param>
@@ -256,6 +265,8 @@ namespace cloud.charging.open.protocols.S2.Connect
         public WANRegistryAPI(HTTPServer       HTTPServer,
                               IWANRegistry     Registry,
                               HTTPPath?        RootPath                   = null,
+                              Int32?           RateLimitCapacity          = null,
+                              TimeSpan?        RateLimitRefillPeriod      = null,
                               ILoggerFactory?  LoggerFactory              = null,
                               String?          HTTPServerName             = null,
                               String?          HTTPServiceName            = null,
@@ -276,8 +287,18 @@ namespace cloud.charging.open.protocols.S2.Connect
 
             ArgumentNullException.ThrowIfNull(Registry);
 
-            this.Registry  = Registry;
-            this.logger    = LoggerFactory?.CreateLogger<WANRegistryAPI>();
+            this.Registry            = Registry;
+            this.logger              = LoggerFactory?.CreateLogger<WANRegistryAPI>();
+
+            var rateLimitCapacity    = RateLimitCapacity ?? DefaultRateLimitCapacity;
+
+            this.requestRateLimiter  = rateLimitCapacity > 0
+                                           ? new S2RequestRateLimiter(
+                                                 "wanRegistry",
+                                                 rateLimitCapacity,
+                                                 RateLimitRefillPeriod ?? TimeSpan.FromMinutes(1)
+                                             )
+                                           : null;
 
             RegisterURLTemplates();
 
@@ -299,14 +320,69 @@ namespace cloud.charging.open.protocols.S2.Connect
         private void RegisterURLTemplates()
         {
 
+            // Every handler is wrapped into the per-source rate limit: a WAN registry answers
+            // the whole internet.
+
             // GET {root}                    =>  ["v1"]
-            AddHandler(HTTPMethod.GET, HTTPPath.Root,                                        HandleVersionIndexAsync);
+            AddHandler(HTTPMethod.GET, HTTPPath.Root,                                    RateLimited(HandleVersionIndexAsync));
 
             // GET {root}v1/endpoint?...     =>  [ EndpointRecord, ... ]
-            AddHandler(HTTPMethod.GET, HTTPPath.Parse($"/{APIVersion}/endpoint"),            HandleQueryEndpointsAsync);
+            AddHandler(HTTPMethod.GET, HTTPPath.Parse($"/{APIVersion}/endpoint"),        RateLimited(HandleQueryEndpointsAsync));
 
             // GET {root}v1/endpoint/{id}    =>  EndpointRecord
-            AddHandler(HTTPMethod.GET, HTTPPath.Parse($"/{APIVersion}/endpoint/{{id}}"),     HandleGetEndpointAsync);
+            AddHandler(HTTPMethod.GET, HTTPPath.Parse($"/{APIVersion}/endpoint/{{id}}"), RateLimited(HandleGetEndpointAsync));
+
+        }
+
+        /// <summary>
+        /// Wrap an HTTP handler into the per-source rate limit of this API.
+        /// </summary>
+        /// <param name="Handler">The HTTP handler to wrap.</param>
+        private HTTPDelegate RateLimited(HTTPDelegate Handler)
+
+            => async request => {
+
+                   if (requestRateLimiter is null)
+                       return await Handler(request).ConfigureAwait(false);
+
+                   var remoteAddress  = RemoteAddressOf(request);
+                   var decision       = requestRateLimiter.TryAcquire(remoteAddress);
+
+                   if (decision.Allowed)
+                       return await Handler(request).ConfigureAwait(false);
+
+                   logger?.LogWarning(
+                       "S2 WAN registry: the request budget of {RemoteAddress} is exhausted, retry in {RetryAfter} seconds.",
+                       remoteAddress?.ToString() ?? S2RequestRateLimiter.UnknownAddress,
+                       Math.Ceiling(decision.RetryAfter.TotalSeconds)
+                   );
+
+                   return JSONResponse(
+                              request,
+                              HTTPStatusCode.ServiceUnavailable,
+                              new JObject(new JProperty("message", "Too many requests.")),
+                              decision.RetryAfter
+                          );
+
+               };
+
+        private static System.Net.IPAddress? RemoteAddressOf(HTTPRequest Request)
+        {
+
+            try
+            {
+
+                var address = Request.RemoteSocket.IPAddress;
+
+                return address is null
+                           ? null
+                           : new System.Net.IPAddress(address.GetBytes());
+
+            }
+            catch (Exception)
+            {
+                return null;
+            }
 
         }
 
@@ -384,7 +460,8 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         private HTTPResponse JSONResponse(HTTPRequest     Request,
                                           HTTPStatusCode  StatusCode,
-                                          JToken          JSON)
+                                          JToken          JSON,
+                                          TimeSpan?       RetryAfter   = null)
         {
 
             try
@@ -404,6 +481,9 @@ namespace cloud.charging.open.protocols.S2.Connect
                               ContentType     = HTTPContentType.Application.JSON_UTF8,
                               Content         = JSON.ToString(Formatting.None).ToUTF8Bytes()
                           };
+
+            if (RetryAfter.HasValue)
+                builder.RetryAfter = Math.Max(1, (Int64) Math.Ceiling(RetryAfter.Value.TotalSeconds)).ToString();
 
             return builder.AsImmutable;
 

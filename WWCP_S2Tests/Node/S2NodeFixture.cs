@@ -17,6 +17,8 @@
 
 #region Usings
 
+using Microsoft.Extensions.Logging;
+
 using org.GraphDefined.Vanaheimr.Hermod;
 using org.GraphDefined.Vanaheimr.Hermod.DNS;
 using org.GraphDefined.Vanaheimr.Hermod.HTTP;
@@ -85,7 +87,8 @@ namespace cloud.charging.open.protocols.S2.Tests.Node
         public static async Task<S2NodeFixture> CreateAsync(Action<CEMNode>?             ConfigureCEM   = null,
                                                             Action<RMNode>?              ConfigureRM    = null,
                                                             ResourceManagerDetails?      Details        = null,
-                                                            Boolean                      Start          = true)
+                                                            Boolean                      Start          = true,
+                                                            ILoggerFactory?              LoggerFactory  = null)
         {
 
             var discovery     = new InMemoryServiceDiscovery();
@@ -131,7 +134,8 @@ namespace cloud.charging.open.protocols.S2.Tests.Node
                                                                                          Addresses      = [ IPv4Address.Localhost ]
                                                                                      }
                                     },
-                                    ServiceDiscovery:  discovery
+                                    ServiceDiscovery:  discovery,
+                                    LoggerFactory:     LoggerFactory
                                 );
 
             // The RM: a LAN communication client addressed as "rm.local".
@@ -165,7 +169,8 @@ namespace cloud.charging.open.protocols.S2.Tests.Node
                                                                                      }
                                     },
                                     ResourceManagerDetails:  Details,
-                                    ServiceDiscovery:        discovery
+                                    ServiceDiscovery:        discovery,
+                                    LoggerFactory:           LoggerFactory
                                 );
 
             // The in-memory DNS resolves the two ".local" host names to loopback.

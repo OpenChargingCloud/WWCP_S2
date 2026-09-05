@@ -11,7 +11,7 @@ finding was adversarially verified; the confirmed findings are worked into this 
 
 Implementation status (2026-09-05): the user accepted all proposed defaults (§2, §7). Phases 0, 1a–1c,
 2a–2b, 3, 4, 5, 6a/6b, 7, 8, 9a–9c, 10a/10b and 11a are implemented (`CONVENTIONS.md` is the binding authoring guide,
-`CHANGELOG.md` lists the content); the next phase is 12 (documentation and packaging). Phase 11b (interop and conformance against s2-python/s2-rust) moves to a separate repository at the user's request (2026-09-05) and is no longer part of this plan. Phase 11a notes: the D13 spike ran and chose the self-signed-leaf fallback (see D13); `TLSProfiles`, `SelfSignedCA`, `CertificatePinStore` and `S2CertificateValidator` live in `Connect/Security/`; `AS2ConnectClient.CertificateValidator` enforces the pins and `AS2Node` pins the peer's `certificateFingerprint` map after pairing (`S2NodeOptions.EnforceCertificatePinning`, default true). Phase 10 notes: `AS2Node`
+`CHANGELOG.md` lists the content); the next phase is 12 (documentation and packaging). Phase 11b (interop and conformance against s2-python/s2-rust) moves to a separate repository at the user's request (2026-09-05) and is no longer part of this plan. Phase 11a notes: the D13 spike ran and chose the self-signed-leaf fallback (see D13); `TLSProfiles`, `SelfSignedCA`, `CertificatePinStore` and `S2CertificateValidator` live in `Connect/Security/`; `AS2ConnectClient.CertificateValidator` enforces the pins and `AS2Node` pins the peer's `certificateFingerprint` map after pairing (`S2NodeOptions.EnforceCertificatePinning`, default true); the remaining 11a items are done as well: `S2RequestRateLimiter` wraps every route of the pairing and session initiation servers (503 + `Retry-After`, 429 optional), `MaxRequestBodySize`/`MaxHTTPBodySize`/`MaxWebSocketMessageSize` bound every input, and `S2LogRedaction`/`S2RedactingLoggerFactory` redact message and structured state of every log entry (`S2NodeOptions.RedactSecretsInLogs`, default true), proven by fuzz, negative and secrets-in-logs tests. Phase 10 notes: `AS2Node`
 composes the S2 Connect components from the deployment/role and establishes sessions automatically on pairing; the stop
 order is the specification's; `RMNode`/`CEMNode` carry the role behaviour and the FRBC control types are the
 `FRBCResourceManager`/`FRBCEnergyManager` `IS2ControlTypeHandler`s (a PEBC handler is deferred, so the PV sample is a
@@ -455,11 +455,20 @@ pairing attempt, stop with an active session (peer sees a clean close), unpair �
 `WWCP_S2_Samples`: `S2RM.EVCharger` (FRBC, exactly the docs example), `S2RM.PV` (PEBC), `S2CEM.Minimal`,
 `S2Connect.PairingTool`; README quick-start snippets are extracted from them; they are the processes of the interop job.
 
-### Phase 11a – Security hardening (M)
+### Phase 11a – Security hardening (M) — **done**
 Leaf rotation ≤ 6 months under the pinned CA, full certificate validation list (authenticity, domain, expiry,
 integrity, crypto) on every TLS setup, Hermod `InMemoryTokenBucketRateLimiter` on pairing/session endpoints,
 request-size limits, the redaction layer of §3.6 wired into every logger, secrets-in-logs test, fuzz/negative tests
 (malformed JSON, oversized arrays, invalid Base64, replayed tokens, overlapping attempts).
+
+Implemented as `Connect/Security/`: `TLSProfiles`, `SelfSignedCA`, `CertificatePinStore`, `S2CertificateValidator`
+(the D13 spike decided the self-signed-leaf fallback, see D13), `S2RequestRateLimiter` (one token bucket per remote
+address in front of *every* route of both servers, refused before parsing and cryptography, 503 + `Retry-After` by
+default because that is the only overload answer the specification defines, 429 on request) and `S2LogRedaction` /
+`S2RedactingLogger` / `S2RedactingLoggerFactory` (secret JSON properties, `Authorization` headers and `name=value`
+pairs masked in the formatted message *and* the structured state; `AS2Node` wraps the logger factory it is given).
+Size limits at three levels: Hermod's `MaxHTTPBodySize` (1 MiB), the APIs' own `MaxRequestBodySize` (64 KiB, 413 in
+the S2 error shape) and `MaxTextMessageSizeIn`/`Out` for WebSocket messages (1 MiB, close 1009).
 
 ### Phase 11b – Interop and conformance (M)
 Docker-compose interop job: message layer against s2-python (plain WebSocket + `Handshake` `0.0.2-beta`, UUID ids,

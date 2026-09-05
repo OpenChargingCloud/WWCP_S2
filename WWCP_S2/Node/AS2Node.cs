@@ -263,8 +263,14 @@ namespace cloud.charging.open.protocols.S2.Node
             this.httpServer        = HTTPServer;
             this.ownsHTTPServer    = HTTPServer is null;
             this.TimeProvider      = TimeProvider ?? System.TimeProvider.System;
-            this.LoggerFactory     = LoggerFactory;
-            this.Logger            = LoggerFactory?.CreateLogger(GetType());
+
+            // Every component of this node logs through this factory, so wrapping it here
+            // redacts the secrets of S2 Connect for all of them at once (PLAN.md §3.6).
+            this.LoggerFactory     = Options.RedactSecretsInLogs
+                                         ? LoggerFactory.WithS2Redaction()
+                                         : LoggerFactory;
+
+            this.Logger            = this.LoggerFactory?.CreateLogger(GetType());
 
             this.Endpoint          = new LocalEndpoint(
                                          Options.Description,
@@ -358,7 +364,11 @@ namespace cloud.charging.open.protocols.S2.Node
                                      Options.BindAddress ?? IPvXAddress.Any,
                                      httpPort,
                                      $"S2 {Role} node",
-                                     AutoStart: false
+                                     AutoStart:        false,
+                                     // The redacting factory, so that HTTP PDUs logged by the
+                                     // server never carry an Authorization header or a token.
+                                     LoggerFactory:    LoggerFactory,
+                                     MaxHTTPBodySize:  Options.MaxHTTPBodySize
                                  );
                     ownsHTTPServer = true;
                 }
@@ -404,6 +414,11 @@ namespace cloud.charging.open.protocols.S2.Node
                                            TimeProvider:           TimeProvider,
                                            LoggerFactory:          LoggerFactory
                                        );
+
+                    // An S2 message is a few kilobytes; a larger one closes the connection
+                    // with 1009 instead of being buffered.
+                    webSocketServer.MaxTextMessageSizeIn   = Options.MaxWebSocketMessageSize;
+                    webSocketServer.MaxTextMessageSizeOut  = Options.MaxWebSocketMessageSize;
 
                     webSocketServer.OnSessionStarted += OnWebSocketSessionStartedAsync;
                     webSocketServer.OnSessionEnded   += OnWebSocketSessionEndedAsync;
@@ -813,11 +828,18 @@ namespace cloud.charging.open.protocols.S2.Node
         private SessionInitiationClient CreateSessionInitiationClient(S2BaseURL SessionInitiationUrl)
         {
 
+            // The message size limit of the node applies to the sessions it opens as well,
+            // unless the session initiation client options state their own.
+            var clientOptions = Options.SessionInitiationClient ?? new SessionInitiationClientOptions();
+
+            if (!clientOptions.MaxWebSocketMessageSize.HasValue)
+                clientOptions = clientOptions with { MaxWebSocketMessageSize = Options.MaxWebSocketMessageSize };
+
             var client = new SessionInitiationClient(
                              SessionInitiationUrl,
                              Endpoint,
                              Store,
-                             Options.SessionInitiationClient,
+                             clientOptions,
                              TimeProvider:   TimeProvider,
                              LoggerFactory:  LoggerFactory,
                              DNSClient:      ServiceDiscovery?.DNSClient

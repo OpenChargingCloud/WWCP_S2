@@ -228,6 +228,43 @@ namespace cloud.charging.open.protocols.S2.Node
 
         #endregion
 
+        #region Hardening
+
+        /// <summary>
+        /// The default maximal size of an HTTP request body: 1 MiB.
+        /// </summary>
+        public const UInt64                              DefaultMaxHTTPBodySize               = 1024 * 1024;
+
+        /// <summary>
+        /// The default maximal size of an S2 WebSocket message: 1 MiB.
+        /// </summary>
+        public const UInt64                              DefaultMaxWebSocketMessageSize       = 1024 * 1024;
+
+        /// <summary>
+        /// The maximal size of an HTTP request body the HTTP server of this node accepts
+        /// (default: 1 MiB); a larger request is refused with 413 before it is read to its end.
+        /// Only used when the node creates its own HTTP server. The pairing and session
+        /// initiation APIs enforce their own, much smaller limits on top of this one.
+        /// </summary>
+        public UInt64                                    MaxHTTPBodySize                      { get; init; } = DefaultMaxHTTPBodySize;
+
+        /// <summary>
+        /// The maximal size of an S2 WebSocket message (default: 1 MiB); a larger message
+        /// closes the connection with 1009 "message too big". Applies to the sessions this
+        /// node accepts and to those it establishes.
+        /// </summary>
+        public UInt64                                    MaxWebSocketMessageSize              { get; init; } = DefaultMaxWebSocketMessageSize;
+
+        /// <summary>
+        /// Whether the loggers of this node redact the secrets of S2 Connect (default: true,
+        /// PLAN.md §3.6). The node wraps the given logger factory into an
+        /// <see cref="S2RedactingLoggerFactory"/>, so that every component it composes logs
+        /// redacted.
+        /// </summary>
+        public Boolean                                   RedactSecretsInLogs                  { get; init; } = true;
+
+        #endregion
+
 
         #region Validate()
 
@@ -266,6 +303,12 @@ namespace cloud.charging.open.protocols.S2.Node
 
             if (ParserOptions is null)
                 throw new ArgumentException("The parser options are required!", nameof(ParserOptions));
+
+            if (MaxHTTPBodySize < 1 || MaxHTTPBodySize > Int32.MaxValue)
+                throw new ArgumentOutOfRangeException(nameof(MaxHTTPBodySize), "The maximal HTTP body size must be between 1 and Int32.MaxValue bytes!");
+
+            if (MaxWebSocketMessageSize < 1)
+                throw new ArgumentOutOfRangeException(nameof(MaxWebSocketMessageSize), "The maximal WebSocket message size must be positive!");
 
         }
 

@@ -149,6 +149,40 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         #endregion
 
+        #region (static) TooManyRequests(RetryAfter = null, Description = null)
+
+        /// <summary>
+        /// 429 Too Many Requests: the rate limit of the remote address is exhausted. The
+        /// specification does not define this answer, so it is opt-in (see
+        /// SessionInitiationServerOptions.UseTooManyRequestsStatusCode).
+        /// </summary>
+        /// <param name="RetryAfter">An optional delay after which the client may retry.</param>
+        /// <param name="Description">An optional description for logs.</param>
+        public static SessionInitiationResult TooManyRequests(TimeSpan?  RetryAfter    = null,
+                                                              String?    Description   = null)
+            => new (HTTPStatusCode.TooManyRequests, Description: Description, RetryAfter: RetryAfter);
+
+        #endregion
+
+        #region (static) PayloadTooLarge(MaxRequestBodySize, AdditionalInfo = null)
+
+        /// <summary>
+        /// 413 Request Entity Too Large: the request body exceeds the configured limit and was
+        /// not parsed.
+        /// </summary>
+        /// <param name="MaxRequestBodySize">The maximal size of a request body in bytes.</param>
+        /// <param name="AdditionalInfo">Optional additional information for the client.</param>
+        public static SessionInitiationResult PayloadTooLarge(Int32    MaxRequestBodySize,
+                                                              String?  AdditionalInfo      = null)
+            => new (HTTPStatusCode.RequestEntityTooLarge,
+                    new CommunicationDetailsErrorMessage(
+                        CommunicationDetailsError.ParsingError,
+                        AdditionalInfo
+                    ),
+                    Description: $"the request body exceeds {MaxRequestBodySize} bytes");
+
+        #endregion
+
         #region (static) OK<T>(Value)
 
         /// <summary>

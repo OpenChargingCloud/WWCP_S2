@@ -115,8 +115,12 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
         /// </summary>
         /// <param name="Records">Optional initial endpoint records (default: none).</param>
         /// <param name="RootPath">The root path of the registry API (default: "/registry/"; "/" mounts it at the root).</param>
-        public static async Task<WANRegistryFixture> CreateAsync(IEnumerable<EndpointRecord>?  Records    = null,
-                                                                 String                        RootPath   = DefaultRootPath)
+        /// <param name="RateLimitCapacity">The request budget per remote address (default: the API default; zero disables the limit).</param>
+        /// <param name="RateLimitRefillPeriod">The period within which that budget refills.</param>
+        public static async Task<WANRegistryFixture> CreateAsync(IEnumerable<EndpointRecord>?  Records                = null,
+                                                                 String                        RootPath               = DefaultRootPath,
+                                                                 Int32?                        RateLimitCapacity      = null,
+                                                                 TimeSpan?                     RateLimitRefillPeriod  = null)
         {
 
             var rootPath     = NormaliseRootPath(RootPath);
@@ -134,7 +138,9 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
             var api          = new WANRegistryAPI(
                                    httpServer,
                                    registry,
-                                   HTTPPath.Parse(rootPath)
+                                   HTTPPath.Parse(rootPath),
+                                   RateLimitCapacity,
+                                   RateLimitRefillPeriod
                                );
 
             await httpServer.Start();

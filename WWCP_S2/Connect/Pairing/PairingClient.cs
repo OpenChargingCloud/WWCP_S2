@@ -907,7 +907,9 @@ namespace cloud.charging.open.protocols.S2.Connect
                 return true;
             }
 
-            if (status == HTTPStatusCode.ServiceUnavailable)
+            // 429 is reported like 503: a rate limited server is a temporarily unavailable server.
+            if (status == HTTPStatusCode.ServiceUnavailable ||
+                status == HTTPStatusCode.TooManyRequests)
             {
                 Failure = new PairingClientResult(PairingClientOutcome.ServiceUnavailable, Operation, ServerResponse: ServerResponse, StatusCode: status,
                                                   Description: "the server is temporarily not able to process the request");

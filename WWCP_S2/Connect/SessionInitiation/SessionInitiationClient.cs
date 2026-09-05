@@ -321,7 +321,9 @@ namespace cloud.charging.open.protocols.S2.Connect
 
                 }
 
-                if (result1.StatusCode == HTTPStatusCode.ServiceUnavailable)
+                // 429 is reported like 503: a rate limited server is a temporarily unavailable server.
+                if (result1.StatusCode == HTTPStatusCode.ServiceUnavailable ||
+                    result1.StatusCode == HTTPStatusCode.TooManyRequests)
                     return new SessionInitiationClientResult(SessionInitiationOutcome.RetryLater, InitiateSessionOperation, result1.StatusCode, Description: "the server is temporarily not available");
 
                 if (result1.StatusCode != HTTPStatusCode.OK)
@@ -530,6 +532,14 @@ namespace cloud.charging.open.protocols.S2.Connect
                                       TimeProvider,
                                       LoggerFactoryValue
                                   );
+
+            // An S2 message is a few kilobytes; a larger one closes the connection with 1009,
+            // so that a peer cannot make this client buffer without bound.
+            if (Options.MaxWebSocketMessageSize.HasValue)
+            {
+                webSocketClient.MaxTextMessageSizeIn   = Options.MaxWebSocketMessageSize;
+                webSocketClient.MaxTextMessageSizeOut  = Options.MaxWebSocketMessageSize;
+            }
 
             try
             {
