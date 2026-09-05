@@ -633,18 +633,26 @@ reference every lower layer, and nothing references the node layer.
 * **`RMNode`** (role RM, one CEM at a time) publishes its `ResourceManagerDetails` as soon as a session opens and offers
   the control types registered with `RegisterControlType`; **`CEMNode`** (role CEM, many RMs) receives the details, picks
   a control type with `SelectControlTypePolicy` (default: the first offered type the RM supports), sends the
-  `SelectControlType`, and can `RevokeAsync` objects. Control types are `IS2ControlTypeHandler`s: `FRBCResourceManager`
-  (RM side: sends the `FRBC_SystemDescription` on activation, forwards `FRBC_Instruction`s to `OnInstruction` and
-  acknowledges them with `InstructionStatusUpdate` NEW) and `FRBCEnergyManager` (CEM side: raises the RM's system
-  description, storage and actuator status and instruction updates, caching the last of each for the session).
+  `SelectControlType`, and can `RevokeAsync` objects. Control types are `IS2ControlTypeHandler`s, and all five have both sides
+  (`Node/ControlTypes/`). They follow one shape: the **RM side** sends the message the control type opens with on
+  activation (`FRBC`/`OMBC`/`DDBC.SystemDescription`, `PEBC.PowerConstraints`, `PPBC.PowerProfileDefinition`), forwards
+  the CEM's instructions to an `OnInstruction`-style callback and acknowledges each with `InstructionStatusUpdate` NEW
+  unless the callback rejected it (`AutoAcknowledgeInstructions`); the **CEM side** raises the RM's messages as events,
+  caches the last of each for the session and clears the caches on deactivation. Where a control type differs, so does
+  its handler: `PPBCResourceManager` carries three instructions (schedule, start and end interruption) through one
+  private `HandleAsync`, `PEBCResourceManager` adds `SendPowerConstraintsAsync` because power constraints are replaced
+  during a session rather than sent once, and `PEBCEnergyManager` keeps *every* energy constraint of the session, since
+  several are valid at once. A new control-type handler starts as a copy of `OMBCResourceManager`, the plainest of them.
+  Note for its tests: a system description that publishes running or transition costs is rejected with INVALID_CONTENT
+  unless the `ResourceManagerDetails` name a currency, so the handler fixtures leave the costs out.
 * **`JSONFileS2Store : IFlushableS2Store`** reuses `InMemoryS2Store` for the logic (via an internal snapshot/load seam)
   and persists the whole state after every mutation through a temp file and an atomic `File.Move(overwrite)`. The file
   carries `formatVersion` (1) and `secretScheme`; access tokens pass through an `ISecretProtector` (default
   `PlaintextSecretProtector`, scheme id ""), so a deployment can encrypt them and a file protected by one scheme is not
   silently read by another. Both built-in stores pass `S2StoreContractTests<TStore>`.
 * **Samples** (`WWCP_S2_Samples`, console): `EVChargerRM` (the FRBC worked example: off/charging modes, 1.4–11 kW,
-  battery 0–100), `PVRM` (a PEBC RM skeleton — the node composition is complete, the PEBC control-type handler is left
-  for a later phase), `MinimalCEM` (an FRBC energy manager), `PairingTool` (DNS-SD browsing) and `Program` with a `demo`
+  battery 0–100), `PVRM` (a PEBC RM: a 4 kWp inverter on L1 whose feed-in the CEM may curtail, with a
+  `PEBCResourceManager` publishing its allowed limit ranges), `MinimalCEM` (an FRBC energy manager), `PairingTool` (DNS-SD browsing) and `Program` with a `demo`
   command that runs a CEM and an EV charger end to end in-process (discovery → pairing → session → FRBC instruction →
   unpairing) and a `browse` command over real Multicast DNS. The README quick-start is the `RunDemoAsync` body between
   its `README quick-start` markers.

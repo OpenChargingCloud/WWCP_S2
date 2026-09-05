@@ -19,8 +19,8 @@ information and instructions. This library is part of the World Wide Charging Pr
 - **The whole S2 Connect lifecycle**: discovery over Multicast DNS / DNS-SD or a WAN endpoint
   registry, pairing with HMAC challenge-response, session initiation with access-token rotation,
   reconnection, and unpairing from either side.
-- **The complete S2 JSON v1.0.0 data model**: 36 messages, 41 schemas, all five control types,
-  validated against the embedded normative schemas in the test suite.
+- **The complete S2 JSON v1.0.0 data model**: 36 messages, 41 schemas, all five control types with
+  handlers for both roles, validated against the embedded normative schemas in the test suite.
 - **Hardened by construction**: TLS certificate pinning, per-source rate limiting, request and
   message size limits, and a redaction layer that keeps secrets out of the logs.
 
@@ -249,7 +249,7 @@ for a constrained RM, therefore stays possible.
 | Session layer: message rules per state and direction, reception-status correlation, revocation, object registry | complete |
 | Plain mode `Handshake`/`HandshakeResponse`, including the legacy `0.0.2-beta` version string | complete |
 | FRBC control type: data model, messages **and** RM/CEM handlers | complete |
-| PEBC, PPBC, OMBC, DDBC control types: data model and messages | complete, no handler yet |
+| PEBC, PPBC, OMBC and DDBC control types: data model, messages **and** RM/CEM handlers | complete |
 
 | S2 Connect 1.0.0 | State |
 |---|---|

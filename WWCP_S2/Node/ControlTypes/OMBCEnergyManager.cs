@@ -25,68 +25,68 @@ namespace cloud.charging.open.protocols.S2.Node
 {
 
     /// <summary>
-    /// A delegate called on the CEM for a received FRBC message of the given type.
+    /// A delegate called on the CEM for a received OMBC message of the given type.
     /// </summary>
-    public delegate Task OnFRBCMessageDelegate<in TMessage>(S2Session          Session,
+    public delegate Task OnOMBCMessageDelegate<in TMessage>(S2Session          Session,
                                                             TMessage           Message,
                                                             CancellationToken  CancellationToken)
         where TMessage : IS2Message;
 
 
     /// <summary>
-    /// The Customer Energy Manager side of Fill Rate Based Control: once FRBC is active it collects
-    /// the RM's <see cref="FRBC_SystemDescription"/>, <see cref="FRBC_ActuatorStatus"/> and
-    /// <see cref="FRBC_StorageStatus"/> (raised as events) and lets the CEM send
-    /// <see cref="FRBC_Instruction"/>s and target profiles through the session. The latest system
-    /// description and storage status are cached for the current session.
+    /// The Customer Energy Manager side of Operation Mode Based Control: once OMBC is active it
+    /// collects the RM's <see cref="OMBC_SystemDescription"/>, <see cref="OMBC_Status"/> and
+    /// <see cref="OMBC_TimerStatus"/> (raised as events) and lets the CEM send
+    /// <see cref="OMBC_Instruction"/>s through the session. The latest system description and
+    /// status are cached for the current session.
     /// </summary>
-    public sealed class FRBCEnergyManager : IS2ControlTypeHandler
+    public sealed class OMBCEnergyManager : IS2ControlTypeHandler
     {
 
         #region Properties
 
         /// <inheritdoc/>
         public ControlType  ControlType
-            => ControlType.FillRateBasedControl;
+            => ControlType.OperationModeBasedControl;
 
         /// <summary>
         /// The most recently received system description of the current session.
         /// </summary>
-        public FRBC_SystemDescription?  LastSystemDescription    { get; private set; }
+        public OMBC_SystemDescription?  LastSystemDescription    { get; private set; }
 
         /// <summary>
-        /// The most recently received storage status of the current session.
+        /// The most recently received operation mode status of the current session.
         /// </summary>
-        public FRBC_StorageStatus?      LastStorageStatus        { get; private set; }
+        public OMBC_Status?             LastStatus               { get; private set; }
 
         /// <summary>
-        /// The most recently received actuator status of the current session.
+        /// The most recently received timer status of the current session.
         /// </summary>
-        public FRBC_ActuatorStatus?     LastActuatorStatus       { get; private set; }
+        public OMBC_TimerStatus?        LastTimerStatus          { get; private set; }
 
         #endregion
 
         #region Events
 
         /// <summary>
-        /// An event fired when the RM sent its FRBC system description.
+        /// An event fired when the RM sent its OMBC system description.
         /// </summary>
-        public event OnFRBCMessageDelegate<FRBC_SystemDescription>?  OnSystemDescription;
+        public event OnOMBCMessageDelegate<OMBC_SystemDescription>?   OnSystemDescription;
 
         /// <summary>
-        /// An event fired when the RM sent an FRBC storage status.
+        /// An event fired when the RM sent an OMBC status.
         /// </summary>
-        public event OnFRBCMessageDelegate<FRBC_StorageStatus>?      OnStorageStatus;
+        public event OnOMBCMessageDelegate<OMBC_Status>?              OnStatus;
 
         /// <summary>
-        /// An event fired when the RM sent an FRBC actuator status.
+        /// An event fired when the RM reported that one of its timers has finished.
         /// </summary>
-        public event OnFRBCMessageDelegate<FRBC_ActuatorStatus>?     OnActuatorStatus;
+        public event OnOMBCMessageDelegate<OMBC_TimerStatus>?         OnTimerStatus;
 
         /// <summary>
         /// An event fired when the RM sent an instruction status update.
         /// </summary>
-        public event OnFRBCMessageDelegate<InstructionStatusUpdate>? OnInstructionStatusUpdate;
+        public event OnOMBCMessageDelegate<InstructionStatusUpdate>?  OnInstructionStatusUpdate;
 
         #endregion
 
@@ -98,24 +98,24 @@ namespace cloud.charging.open.protocols.S2.Node
 
             var registrations = new CompositeDisposable();
 
-            registrations.Add(Session.On<FRBC_SystemDescription>(async (session, message, ct) => {
+            registrations.Add(Session.On<OMBC_SystemDescription>(async (session, message, ct) => {
                 LastSystemDescription = message;
                 if (OnSystemDescription is not null)
                     await OnSystemDescription.Invoke(session, message, ct).ConfigureAwait(false);
                 return null;
             }));
 
-            registrations.Add(Session.On<FRBC_StorageStatus>(async (session, message, ct) => {
-                LastStorageStatus = message;
-                if (OnStorageStatus is not null)
-                    await OnStorageStatus.Invoke(session, message, ct).ConfigureAwait(false);
+            registrations.Add(Session.On<OMBC_Status>(async (session, message, ct) => {
+                LastStatus = message;
+                if (OnStatus is not null)
+                    await OnStatus.Invoke(session, message, ct).ConfigureAwait(false);
                 return null;
             }));
 
-            registrations.Add(Session.On<FRBC_ActuatorStatus>(async (session, message, ct) => {
-                LastActuatorStatus = message;
-                if (OnActuatorStatus is not null)
-                    await OnActuatorStatus.Invoke(session, message, ct).ConfigureAwait(false);
+            registrations.Add(Session.On<OMBC_TimerStatus>(async (session, message, ct) => {
+                LastTimerStatus = message;
+                if (OnTimerStatus is not null)
+                    await OnTimerStatus.Invoke(session, message, ct).ConfigureAwait(false);
                 return null;
             }));
 
@@ -141,8 +141,8 @@ namespace cloud.charging.open.protocols.S2.Node
         public Task DeactivateAsync(S2Session Session, CancellationToken CancellationToken)
         {
             LastSystemDescription  = null;
-            LastStorageStatus      = null;
-            LastActuatorStatus     = null;
+            LastStatus             = null;
+            LastTimerStatus        = null;
             return Task.CompletedTask;
         }
 

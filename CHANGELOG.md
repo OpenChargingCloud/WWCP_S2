@@ -138,6 +138,19 @@ independent of the S2 JSON and S2 Connect versions it implements.
   reports how far the pinned Styx and Hermod revisions have drifted from their `master`, and a `Package` step builds and
   checks the package on every push.
 
+- The control-type handlers of the four remaining control types: `PEBCResourceManager`/`PEBCEnergyManager`,
+  `PPBCResourceManager`/`PPBCEnergyManager`, `OMBCResourceManager`/`OMBCEnergyManager` and
+  `DDBCResourceManager`/`DDBCEnergyManager`. All five control types now have both sides, and they share the shape of
+  the FRBC pair: the RM side sends what the control type opens with when the CEM selects it (`PEBC.PowerConstraints`,
+  `PPBC.PowerProfileDefinition`, `OMBC`/`DDBC.SystemDescription`), forwards the CEM's instructions to a callback and
+  acknowledges each with an `InstructionStatusUpdate` NEW unless the callback rejected it; the CEM side raises the RM's
+  messages as events and caches the last of each until the control type is deactivated. Where the control types differ,
+  the handlers do too: PPBC carries three instructions (schedule, start and end interruption),
+  `PEBCResourceManager.SendPowerConstraintsAsync` replaces the power constraints during a session, and
+  `PEBCEnergyManager` keeps every energy constraint rather than only the last, because several are valid at once.
+  The `PVRM` sample is no longer a skeleton: it registers a `PEBCResourceManager` for a 4 kWp inverter whose feed-in the
+  CEM may curtail. 31 tests drive the four pairs over real sessions.
+
 ### Fixed
 
 - The generated NuGet package no longer declares the sibling source projects as dependencies. `dotnet pack` had

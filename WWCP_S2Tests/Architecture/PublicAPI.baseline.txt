@@ -441,6 +441,18 @@ delegate cloud.charging.open.protocols.S2.Connect.ServerCertificateFingerprintDe
     cloud.charging.open.protocols.S2.Connect.CertificateFingerprint? EndInvoke(System.IAsyncResult result)
     cloud.charging.open.protocols.S2.Connect.CertificateFingerprint? Invoke()
 
+delegate cloud.charging.open.protocols.S2.Node.OnDDBCInstructionDelegate
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.DDBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.DDBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<TMessage>
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken)
+
 delegate cloud.charging.open.protocols.S2.Node.OnFRBCInstructionDelegate
     .ctor(System.Object object, System.IntPtr method)
     System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.FRBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
@@ -448,6 +460,42 @@ delegate cloud.charging.open.protocols.S2.Node.OnFRBCInstructionDelegate
     System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.FRBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken)
 
 delegate cloud.charging.open.protocols.S2.Node.OnFRBCMessageDelegate<TMessage>
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnOMBCInstructionDelegate
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.OMBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.OMBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnOMBCMessageDelegate<TMessage>
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnPEBCInstructionDelegate
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.PEBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.PEBC_Instruction Instruction, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnPEBCMessageDelegate<TMessage>
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnPPBCInstructionDelegate<TInstruction>
+    .ctor(System.Object object, System.IntPtr method)
+    System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TInstruction Instruction, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> EndInvoke(System.IAsyncResult result)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.ReceptionStatusValue?> Invoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TInstruction Instruction, System.Threading.CancellationToken CancellationToken)
+
+delegate cloud.charging.open.protocols.S2.Node.OnPPBCMessageDelegate<TMessage>
     .ctor(System.Object object, System.IntPtr method)
     System.IAsyncResult BeginInvoke(cloud.charging.open.protocols.S2.Session.S2Session Session, TMessage Message, System.Threading.CancellationToken CancellationToken, System.AsyncCallback callback, System.Object object)
     System.Threading.Tasks.Task EndInvoke(System.IAsyncResult result)
@@ -2527,6 +2575,34 @@ sealed class cloud.charging.open.protocols.S2.Node.CEMNode : cloud.charging.open
     cloud.charging.open.protocols.S2.EnergyManagementRole Role { get; }
     cloud.charging.open.protocols.S2.Node.CEMNode RegisterControlType(cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler Handler)
 
+sealed class cloud.charging.open.protocols.S2.Node.DDBCEnergyManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor()
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    cloud.charging.open.protocols.S2.DDBC_ActuatorStatus LastActuatorStatus { get; }
+    cloud.charging.open.protocols.S2.DDBC_AverageDemandRateForecast LastAverageDemandRateForecast { get; }
+    cloud.charging.open.protocols.S2.DDBC_PresentDemandStatus LastPresentDemandStatus { get; }
+    cloud.charging.open.protocols.S2.DDBC_SystemDescription LastSystemDescription { get; }
+    cloud.charging.open.protocols.S2.DDBC_TimerStatus LastTimerStatus { get; }
+    event cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<cloud.charging.open.protocols.S2.DDBC_ActuatorStatus> OnActuatorStatus
+    event cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<cloud.charging.open.protocols.S2.DDBC_AverageDemandRateForecast> OnAverageDemandRateForecast
+    event cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<cloud.charging.open.protocols.S2.DDBC_PresentDemandStatus> OnPresentDemandStatus
+    event cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<cloud.charging.open.protocols.S2.DDBC_SystemDescription> OnSystemDescription
+    event cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<cloud.charging.open.protocols.S2.DDBC_TimerStatus> OnTimerStatus
+    event cloud.charging.open.protocols.S2.Node.OnDDBCMessageDelegate<cloud.charging.open.protocols.S2.InstructionStatusUpdate> OnInstructionStatusUpdate
+
+sealed class cloud.charging.open.protocols.S2.Node.DDBCResourceManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor(System.Func<cloud.charging.open.protocols.S2.DDBC_SystemDescription> SystemDescriptionFactory, System.TimeProvider TimeProvider)
+    .ctor(cloud.charging.open.protocols.S2.DDBC_SystemDescription SystemDescription, System.TimeProvider TimeProvider)
+    System.Boolean AutoAcknowledgeInstructions { get; init; }
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    event cloud.charging.open.protocols.S2.Node.OnDDBCInstructionDelegate OnInstruction
+
 sealed class cloud.charging.open.protocols.S2.Node.FRBCEnergyManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
     .ctor()
     System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
@@ -2550,6 +2626,78 @@ sealed class cloud.charging.open.protocols.S2.Node.FRBCResourceManager : cloud.c
     System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
     cloud.charging.open.protocols.S2.ControlType ControlType { get; }
     event cloud.charging.open.protocols.S2.Node.OnFRBCInstructionDelegate OnInstruction
+
+sealed class cloud.charging.open.protocols.S2.Node.OMBCEnergyManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor()
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    cloud.charging.open.protocols.S2.OMBC_Status LastStatus { get; }
+    cloud.charging.open.protocols.S2.OMBC_SystemDescription LastSystemDescription { get; }
+    cloud.charging.open.protocols.S2.OMBC_TimerStatus LastTimerStatus { get; }
+    event cloud.charging.open.protocols.S2.Node.OnOMBCMessageDelegate<cloud.charging.open.protocols.S2.InstructionStatusUpdate> OnInstructionStatusUpdate
+    event cloud.charging.open.protocols.S2.Node.OnOMBCMessageDelegate<cloud.charging.open.protocols.S2.OMBC_Status> OnStatus
+    event cloud.charging.open.protocols.S2.Node.OnOMBCMessageDelegate<cloud.charging.open.protocols.S2.OMBC_SystemDescription> OnSystemDescription
+    event cloud.charging.open.protocols.S2.Node.OnOMBCMessageDelegate<cloud.charging.open.protocols.S2.OMBC_TimerStatus> OnTimerStatus
+
+sealed class cloud.charging.open.protocols.S2.Node.OMBCResourceManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor(System.Func<cloud.charging.open.protocols.S2.OMBC_SystemDescription> SystemDescriptionFactory, System.TimeProvider TimeProvider)
+    .ctor(cloud.charging.open.protocols.S2.OMBC_SystemDescription SystemDescription, System.TimeProvider TimeProvider)
+    System.Boolean AutoAcknowledgeInstructions { get; init; }
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    event cloud.charging.open.protocols.S2.Node.OnOMBCInstructionDelegate OnInstruction
+
+sealed class cloud.charging.open.protocols.S2.Node.PEBCEnergyManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor()
+    System.Collections.Generic.IReadOnlyList<cloud.charging.open.protocols.S2.PEBC_EnergyConstraint> EnergyConstraints { get; }
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    cloud.charging.open.protocols.S2.PEBC_PowerConstraints LastPowerConstraints { get; }
+    event cloud.charging.open.protocols.S2.Node.OnPEBCMessageDelegate<cloud.charging.open.protocols.S2.InstructionStatusUpdate> OnInstructionStatusUpdate
+    event cloud.charging.open.protocols.S2.Node.OnPEBCMessageDelegate<cloud.charging.open.protocols.S2.PEBC_EnergyConstraint> OnEnergyConstraint
+    event cloud.charging.open.protocols.S2.Node.OnPEBCMessageDelegate<cloud.charging.open.protocols.S2.PEBC_PowerConstraints> OnPowerConstraints
+
+sealed class cloud.charging.open.protocols.S2.Node.PEBCResourceManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor(System.Func<cloud.charging.open.protocols.S2.PEBC_PowerConstraints> PowerConstraintsFactory, System.TimeProvider TimeProvider)
+    .ctor(cloud.charging.open.protocols.S2.PEBC_PowerConstraints PowerConstraints, System.TimeProvider TimeProvider)
+    System.Boolean AutoAcknowledgeInstructions { get; init; }
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.Session.S2SendOutcome> SendPowerConstraintsAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, cloud.charging.open.protocols.S2.PEBC_PowerConstraints PowerConstraints, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    cloud.charging.open.protocols.S2.PEBC_PowerConstraints SentPowerConstraints { get; }
+    event cloud.charging.open.protocols.S2.Node.OnPEBCInstructionDelegate OnInstruction
+
+sealed class cloud.charging.open.protocols.S2.Node.PPBCEnergyManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor()
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    cloud.charging.open.protocols.S2.PPBC_PowerProfileDefinition LastPowerProfileDefinition { get; }
+    cloud.charging.open.protocols.S2.PPBC_PowerProfileStatus LastPowerProfileStatus { get; }
+    event cloud.charging.open.protocols.S2.Node.OnPPBCMessageDelegate<cloud.charging.open.protocols.S2.InstructionStatusUpdate> OnInstructionStatusUpdate
+    event cloud.charging.open.protocols.S2.Node.OnPPBCMessageDelegate<cloud.charging.open.protocols.S2.PPBC_PowerProfileDefinition> OnPowerProfileDefinition
+    event cloud.charging.open.protocols.S2.Node.OnPPBCMessageDelegate<cloud.charging.open.protocols.S2.PPBC_PowerProfileStatus> OnPowerProfileStatus
+
+sealed class cloud.charging.open.protocols.S2.Node.PPBCResourceManager : cloud.charging.open.protocols.S2.Session.IS2ControlTypeHandler
+    .ctor(System.Func<cloud.charging.open.protocols.S2.PPBC_PowerProfileDefinition> PowerProfileDefinitionFactory, System.TimeProvider TimeProvider)
+    .ctor(cloud.charging.open.protocols.S2.PPBC_PowerProfileDefinition PowerProfileDefinition, System.TimeProvider TimeProvider)
+    System.Boolean AutoAcknowledgeInstructions { get; init; }
+    System.IDisposable RegisterHandlers(cloud.charging.open.protocols.S2.Session.S2Session Session)
+    System.Threading.Tasks.Task ActivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    System.Threading.Tasks.Task DeactivateAsync(cloud.charging.open.protocols.S2.Session.S2Session Session, System.Threading.CancellationToken CancellationToken)
+    cloud.charging.open.protocols.S2.ControlType ControlType { get; }
+    event cloud.charging.open.protocols.S2.Node.OnPPBCInstructionDelegate<cloud.charging.open.protocols.S2.PPBC_EndInterruptionInstruction> OnEndInterruptionInstruction
+    event cloud.charging.open.protocols.S2.Node.OnPPBCInstructionDelegate<cloud.charging.open.protocols.S2.PPBC_ScheduleInstruction> OnScheduleInstruction
+    event cloud.charging.open.protocols.S2.Node.OnPPBCInstructionDelegate<cloud.charging.open.protocols.S2.PPBC_StartInterruptionInstruction> OnStartInterruptionInstruction
 
 sealed class cloud.charging.open.protocols.S2.Node.RMNode : cloud.charging.open.protocols.S2.Node.AS2Node
     .ctor(cloud.charging.open.protocols.S2.Connect.HostedNode Node, cloud.charging.open.protocols.S2.Node.S2NodeOptions Options, cloud.charging.open.protocols.S2.ResourceManagerDetails ResourceManagerDetails, cloud.charging.open.protocols.S2.Connect.IS2Store Store, cloud.charging.open.protocols.S2.Connect.IServiceDiscovery ServiceDiscovery, org.GraphDefined.Vanaheimr.Hermod.HTTP.HTTPServer HTTPServer, System.TimeProvider TimeProvider, Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory)
