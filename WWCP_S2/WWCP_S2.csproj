@@ -8,7 +8,17 @@
     <Description>An implementation of the S2 energy flexibility standard (EN 50491-12-2, S2 JSON v1.0.0) and S2 Connect 1.0.0 for .NET, built on the Vanaheimr Styx and Hermod libraries.</Description>
     <PackageTags>S2;S2Connect;EN50491-12-2;energy;flexibility;CEM;RM;WWCP;OpenChargingCloud</PackageTags>
     <PackageReadmeFile>README.md</PackageReadmeFile>
+    <PackageReleaseNotes>See CHANGELOG.md at https://github.com/OpenChargingCloud/WWCP_S2/blob/master/CHANGELOG.md</PackageReleaseNotes>
     <EnablePackageValidation>true</EnablePackageValidation>
+
+    <!-- A separate symbol package, and source served from GitHub: the SDK adds SourceLink for a
+         GitHub repository by itself since .NET 8, it only needs the repository URL published and
+         the generated files embedded. Together with Deterministic + ContinuousIntegrationBuild
+         (Directory.Build.props) a package built by CI can be stepped into and re-created. -->
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
   </PropertyGroup>
 
   <ItemGroup>
@@ -31,8 +41,28 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Hermod\Hermod\Hermod.csproj" />
-    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj" />
+    <!--
+      Styx and Hermod are sibling source projects (PLAN.md D4/D12), and neither is published on
+      nuget.org. Left alone, `dotnet pack` turns a ProjectReference into a package dependency and
+      infers id and version from the project: "org.GraphDefined.Vanaheimr.Hermod 1.0.0", which does
+      not exist, and "Styx 1.0.0" — an id that on nuget.org belongs to an unrelated WebSocket
+      library by ReactiveMarkets. A consumer restoring that package would fail today and could pull
+      a stranger's assembly the day that version appears.
+
+      PrivateAssets=all keeps both out of the .nuspec. The package therefore declares only the
+      dependencies it can honestly name, and buildTransitive/*.targets tells anyone who installs it
+      which two assemblies they have to supply themselves — see build/ and README "Building".
+      The price is that the reference no longer flows to consuming projects, which is why
+      WWCP_S2Tests and WWCP_S2_Samples reference Styx and Hermod themselves; they use both directly
+      anyway. Once Vanaheimr publishes the two libraries, drop PrivateAssets and the .targets file.
+    -->
+    <ProjectReference Include="..\..\Hermod\Hermod\Hermod.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj"       PrivateAssets="all" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Ships as buildTransitive so it also runs for projects that get this package transitively. -->
+    <None Include="build\cloud.charging.open.protocols.S2.targets" Pack="true" PackagePath="buildTransitive\" />
   </ItemGroup>
 
   <ItemGroup>

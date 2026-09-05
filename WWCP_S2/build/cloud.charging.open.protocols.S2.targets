@@ -1,0 +1,34 @@
+<Project>
+
+  <!--
+    Shipped inside the NuGet package as buildTransitive/cloud.charging.open.protocols.S2.targets.
+
+    This library is built against the Vanaheimr libraries Styx and Hermod as SOURCE siblings
+    (PLAN.md D4/D12), and neither is published on nuget.org. The package therefore cannot declare
+    them as dependencies without naming ids it does not own — "Styx" belongs to an unrelated
+    library there — so it declares neither and says so here instead.
+
+    Without this target the omission would surface as a TypeLoadException or a FileNotFoundException
+    for Styx or org.GraphDefined.Vanaheimr.Hermod at run time, in whatever code path happened to
+    touch S2 first. With it, the consuming build stops with an explanation.
+
+    Set S2SkipVanaheimrReferenceCheck=true to build anyway (for example when the assemblies are
+    supplied at deployment time rather than at compile time).
+  -->
+
+  <Target Name="S2CheckVanaheimrReferences"
+          AfterTargets="ResolveAssemblyReferences"
+          Condition="'$(S2SkipVanaheimrReferenceCheck)' != 'true'">
+
+    <ItemGroup>
+      <_S2Hermod Include="@(ReferencePath)" Condition="'%(Filename)' == 'org.GraphDefined.Vanaheimr.Hermod'" />
+      <_S2Styx   Include="@(ReferencePath)" Condition="'%(Filename)' == 'Styx'" />
+    </ItemGroup>
+
+    <Error Condition="'@(_S2Hermod)' == '' Or '@(_S2Styx)' == ''"
+           Code="S2NUG001"
+           Text="cloud.charging.open.protocols.S2 needs the Vanaheimr libraries Styx and Hermod, which are not published on nuget.org and are therefore not dependencies of this package. Add a reference to both (https://github.com/Vanaheimr/Styx and https://github.com/Vanaheimr/Hermod, built from source), or set S2SkipVanaheimrReferenceCheck=true to suppress this check." />
+
+  </Target>
+
+</Project>

@@ -2,68 +2,178 @@ name: CI
 
 on:
   push:
-    branches: [master, main]
+    branches: [master]
   pull_request:
-    branches: [master, main]
+    branches: [master]
+  # Manual runs from the Actions tab ("Run workflow"), same as nightly.yml.
   workflow_dispatch:
 
 concurrency:
+  # Pull requests: one run per branch, newest wins — a run against a head
+  # that has been superseded is answering a question nobody is asking any
+  # more.
+  #
+  # Pushes: one run per commit, and nothing cancels anything. A commit with
+  # no verdict is a hole nobody comes back to fill: the next commit contains
+  # it, so the code does get tested eventually, but once that run is red
+  # there is no longer any way to say which of the two commits did it.
+  #
+  # Keying the group on the SHA, rather than only turning cancel-in-progress
+  # off, is what makes that hold for more than two pushes: a group keeps at
+  # most one run *pending*, so a third push discards the second before it
+  # ever starts.
   group: ci-${{ github.event_name == 'pull_request' && github.ref || github.sha }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 # PLAN.md, D12: Styx and Hermod are checked out as sibling directories, because
 # WWCP_S2.csproj references ..\..\Styx\Styx\Styx.csproj and ..\..\Hermod\Hermod\Hermod.csproj.
-# Both are pinned to the commits this repository was last built against; bump them
-# deliberately.
+#
+# Both are PINNED here, which is where this gate deliberately differs from Hermod's
+# and Styx's own: those build against each other's master and treat a breaking change
+# upstream as an honest red. This repository is downstream of work that is still being
+# written — the Multicast DNS/DNS-SD implementation of phase 9 and the WebSocket message
+# size limit of phase 11a are Hermod commits made for it — so an unpinned gate here would
+# report "WWCP S2 is broken" for something that happened in another repository. The price
+# is that a stale pin is invisible: it hid for two phases, until a run failed to compile
+# because the pinned Hermod predated the mDNS work. nightly.yml therefore builds the same
+# code against Styx and Hermod master and says so in its step summary.
+#
+# Bump these deliberately, in the commit that needs the new upstream code.
 env:
   STYX_REF: 0f40d614a9b3f7562193f2ed6ae94fb4685fa6fe
   HERMOD_REF: 368fa179ace8ccf0f2ea662bfed75a3e8044cda3
 
 jobs:
   build-and-test:
-    # TLS and certificate behaviour differs between Schannel (Windows) and OpenSSL (Linux),
-    # so both platforms are gates. fail-fast is off: "red on one platform" is the signal.
+    # The same two legs as the Hermod and Styx gates, so all three test the same
+    # platform pair:
+    #
+    #  * Windows, the platform this suite has been developed and verified on. TLS
+    #    chain building goes through Schannel and CryptoAPI here; the D13 spike that
+    #    decided how S2 Connect endpoints present their certificate was measured on
+    #    this leg, and `TLSProfiles` deliberately sets no cipher policy on Windows.
+    #  * Debian 13, because that is what this code runs on in production. GitHub
+    #    offers no Debian runner image, so the leg runs on an Ubuntu runner inside a
+    #    bare debian:13 container — deliberately NOT the official .NET SDK image,
+    #    which is still Debian-12-based with OpenSSL 3.0.
+    #
+    # fail-fast is off on purpose: "red on exactly one platform" is the most valuable
+    # signal this matrix produces, so one leg must not cancel the other.
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        include:
+          - os: windows-latest
+            leg: windows-latest
+          - os: ubuntu-latest
+            container: debian:13
+            leg: debian-13-container
     runs-on: ${{ matrix.os }}
+    container: ${{ matrix.container }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           path: WWCP_S2
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: Vanaheimr/Styx
           ref: ${{ env.STYX_REF }}
           path: Styx
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
         with:
           repository: Vanaheimr/Hermod
           ref: ${{ env.HERMOD_REF }}
           path: Hermod
 
-      - uses: actions/setup-dotnet@v4
+      # The bare debian:13 container needs the .NET runtime prerequisites before
+      # setup-dotnet installs the SDK: curl for the dotnet-install script itself,
+      # ICU and tzdata for globalization, OpenSSL for crypto, ca-certificates for
+      # NuGet over HTTPS. Package names verified on Debian 13 (trixie).
+      - name: Install .NET prerequisites (Debian container)
+        if: runner.os == 'Linux'
+        run: apt-get update && apt-get install -y --no-install-recommends ca-certificates curl libicu76 libssl3t64 libstdc++6 tzdata
+
+      - uses: actions/setup-dotnet@v6
         with:
           dotnet-version: '10.0.x'
 
+      # Not the solution: WWCP_S2.slnx carries Hermod and Styx — including THEIR test
+      # projects — in a "Dependencies" folder for the IDE, and building those here would
+      # test other repositories on this repository's budget. The two projects below pull
+      # in everything this one owns: the test project references the library, and the
+      # samples are built so they cannot rot unnoticed (they are the README's quick starts).
       - name: Build
         working-directory: WWCP_S2
-        run: dotnet build WWCP_S2Tests/WWCP_S2Tests.csproj --configuration Release
+        run: |
+          dotnet build WWCP_S2Tests/WWCP_S2Tests.csproj --configuration Release
+          dotnet build WWCP_S2_Samples/WWCP_S2_Samples.csproj --configuration Release
 
-      # Everything that runs deterministically in-process. Timing (real-clock Hermod
-      # behaviour), Multicast (DNS-SD on the host network) and Interop (docker) are
-      # nightly categories, see PLAN.md §8.
+      # Everything that is deterministic and in-process: types, messages, schema
+      # validation, sessions, and the HTTP/WebSocket flows against our own servers on
+      # ephemeral ports with a fake clock. A failure here means our code broke.
+      #
+      # Two categories stay out (PLAN.md §8):
+      #   * Timing — real-clock Hermod behaviour (pings, HTTP timeouts, token buckets).
+      #     Generous margins, but a hosted runner can still stall past them, and a gate
+      #     whose red can also mean "the runner was busy" stops being read as a gate.
+      #   * Multicast — DNS-SD over real UDP sockets, which depends on what the runner's
+      #     network does with multicast rather than on this code.
+      # nightly.yml runs both: Timing fatally, Multicast informationally.
+      #
+      # The Interop category is not excluded any more because it no longer exists here:
+      # the conformance work against s2-python and s2-rust moved to its own repository
+      # on 2026-09-05.
       - name: Test
         timeout-minutes: 30
         working-directory: WWCP_S2
-        run: dotnet test WWCP_S2Tests/WWCP_S2Tests.csproj --configuration Release --no-build --filter "TestCategory!=Timing&TestCategory!=Multicast&TestCategory!=Interop" --logger "console;verbosity=normal" --logger "trx;LogFileName=${{ matrix.os }}.trx" --results-directory artifacts
+        run: dotnet test WWCP_S2Tests/WWCP_S2Tests.csproj --configuration Release --no-build --filter "TestCategory!=Timing&TestCategory!=Multicast" --logger "console;verbosity=normal" --logger "trx;LogFileName=${{ matrix.leg }}.trx" --results-directory artifacts
 
+      # The console log answers "did it pass" and almost nothing else; finding the one red
+      # test in a 1500-test run means pulling a large step log and grepping it, and a skip
+      # reason (`Assert.Ignore`) never reaches the console at normal verbosity at all. TRX
+      # keeps both per test: outcome, duration, error message, stack trace and the ignore
+      # reason. It also survives the run — `gh run download` gets structured results where
+      # the log view needs a signed-in browser session.
+      #
+      # !cancelled() rather than success(): a red run is when these files matter most, so
+      # uploading only on green would discard the evidence in exactly that case. A build
+      # that fails before the test step leaves no .trx, which upload-artifact reports as a
+      # warning rather than a second failure — the compile error is the finding there.
       - name: Upload test results
         if: ${{ !cancelled() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
-          name: test-results-${{ matrix.os }}
+          name: test-results-${{ matrix.leg }}
           path: WWCP_S2/artifacts/*.trx
+
+      # Packaging is platform independent, so it runs on one leg. It is a gate rather than a
+      # release step — nothing is pushed anywhere — because the interesting failures happen at
+      # pack time: a missing README or notice file, and above all a dependency this package must
+      # not declare. Styx and Hermod are source siblings that nobody has published, and left to
+      # itself NuGet would turn them into "org.GraphDefined.Vanaheimr.Hermod 1.0.0" (does not
+      # exist) and "Styx 1.0.0" — an id that on nuget.org belongs to an unrelated library.
+      # WWCP_S2.csproj keeps both out with PrivateAssets; this step is what notices if that
+      # protection is ever lost.
+      - name: Package
+        if: matrix.leg == 'debian-13-container'
+        shell: bash
+        working-directory: WWCP_S2
+        run: |
+          set -e
+          dotnet pack WWCP_S2/WWCP_S2.csproj --configuration Release --no-build -o artifacts/package
+          if grep -E 'dependency id="(Styx|org\.GraphDefined\.Vanaheimr\.Hermod)"' WWCP_S2/obj/Release/*.nuspec; then
+            echo "::error::The package declares an unpublished sibling project as a NuGet dependency; see the comment above this step in ci.yml."
+            exit 1
+          fi
+          ls -la artifacts/package
+
+      - name: Upload package
+        if: ${{ !cancelled() && matrix.leg == 'debian-13-container' }}
+        uses: actions/upload-artifact@v7
+        with:
+          name: package
+          path: |
+            WWCP_S2/artifacts/package/*.nupkg
+            WWCP_S2/artifacts/package/*.snupkg

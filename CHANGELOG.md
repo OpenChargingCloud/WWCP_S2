@@ -123,6 +123,27 @@ independent of the S2 JSON and S2 Connect versions it implements.
   session and unpairing run for every secret it knows. A peer announcing an access token below the 32 bytes the
   specification recommends is accepted ("should", not "must") but logged as weak.
 
+- Phase 12: documentation, public API baseline and packaging – a `README.md` written for someone who has not read the
+  plan (quick starts for a resource manager, a customer energy manager and plain S2 JSON over WebSockets, the
+  architecture and its layering rule, a feature matrix that names what is not implemented, the deployment and port
+  table, the security defaults, and how to build, test and package), `PublicAPITests` with the checked-in
+  `PublicAPI.baseline.txt`, which renders every public and protected member of the library as text so that an API
+  change appears as a reviewable diff in the commit that causes it (regenerate with `S2_UPDATE_PUBLIC_API=1`), and the
+  NuGet package: README, third-party notices, XML documentation, a `.snupkg` symbol package, SourceLink and a
+  deterministic CI build. CI and nightly now follow the Hermod and Styx workflows (`windows-latest` and Debian 13 in a
+  `debian:13` container, TRX artefacts), the nightly runs the `Timing` category, probes `Multicast` informationally and
+  reports how far the pinned Styx and Hermod revisions have drifted from their `master`, and a `Package` step builds and
+  checks the package on every push.
+
+### Fixed
+
+- The generated NuGet package no longer declares the sibling source projects as dependencies. `dotnet pack` had
+  inferred `org.GraphDefined.Vanaheimr.Hermod 1.0.0`, which does not exist, and `Styx 1.0.0` – an id that on
+  nuget.org belongs to an unrelated library by another author, so an installed package would have failed to restore and
+  could have resolved to a foreign assembly the day that version appeared. Both references are private now, the CI
+  package step verifies it, and a `buildTransitive` target explains the two assemblies a consumer has to supply
+  (`S2NUG001`).
+
 ### Fixed (after the phase 0–3 code review)
 
 - Timestamps are parsed strictly as RFC 3339 (lower-case `t`/`z` accepted, time-only or textual dates

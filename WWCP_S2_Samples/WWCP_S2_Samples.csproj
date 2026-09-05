@@ -11,6 +11,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\WWCP_S2\WWCP_S2.csproj" />
+    <!-- Same as in the test project: the library's Styx and Hermod references are private, and
+         these samples use Hermod's URL, IP address and port types directly. -->
+    <ProjectReference Include="..\..\Hermod\Hermod\Hermod.csproj" />
+    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj" />
   </ItemGroup>
 
 </Project>

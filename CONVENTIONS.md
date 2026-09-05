@@ -749,3 +749,43 @@ Folder `Connect/Security` (beside `SubnetCheck`/`ISubnetPolicy` from Phase 6).
   The second rule the layer rests on: **every type that holds a secret redacts its own `ToString()`** — no redaction can
   mask a bare token logged without its property name, so a new secret-bearing type (struct or class) must redact itself. This is the second line of
   defence: every type holding a secret already redacts its own `ToString()` and the library logs no request bodies.
+
+
+## 17. Documentation, public API and packaging (Phase 12)
+
+* **`README.md` is the entry point and is written for someone who has not read `PLAN.md`**: what the library is, a
+  quick start per role (RM, CEM, plain S2 JSON over WebSockets), the architecture with its layering rule, a feature
+  matrix that says what is *not* implemented as clearly as what is, the deployment and port table, the security
+  defaults, how to build and test, and the packaging caveat. Its code blocks are condensed from the samples — which are
+  linked next to each of them and compiled by CI — and every signature in them is checked against the public API
+  baseline below rather than written from memory. A changed constructor therefore has one place to look: the baseline
+  diff tells whether a quick start went stale.
+* **XML documentation is not optional and needs no separate check**: the library sets
+  `GenerateDocumentationFile` and `TreatWarningsAsErrors`, so a public member without a `<summary>` is CS1591 and the
+  build fails. The test and sample projects switch both off — test names document themselves.
+* **The public API baseline** (`WWCP_S2Tests/Architecture/PublicAPI.baseline.txt`, generated and compared by
+  `PublicAPITests`) records every public and protected member as text: type kinds, base types, interfaces, signatures.
+  It is a review aid rather than a binary-compatibility checker (no nullability, attributes or default values), and its
+  job is that **an API change appears as a diff in the commit that causes it** and has to be defended there. Regenerate
+  it deliberately with `S2_UPDATE_PUBLIC_API=1` and read the diff before committing; a removal or a changed signature
+  means the package version has to move accordingly. The baseline is embedded in the test assembly so the comparison
+  also works from a copied output directory, and `Baseline_IsNotEmpty` guards the guard.
+* **Packaging rule: no unpublished project may become a NuGet dependency.** Styx and Hermod are source siblings that
+  nobody has published, and `dotnet pack` would otherwise invent
+  `org.GraphDefined.Vanaheimr.Hermod 1.0.0` (does not exist) and `Styx 1.0.0` — an id that on nuget.org belongs to an
+  unrelated library by another author, i.e. a package that fails to restore today and could pull a stranger's assembly
+  tomorrow. Both references therefore carry `PrivateAssets="all"`, the CI `Package` step greps the generated `.nuspec`
+  to make sure that stays true, and `build/cloud.charging.open.protocols.S2.targets` ships inside the package so a
+  consuming build that lacks the two assemblies fails with `S2NUG001` and an instruction instead of a
+  `FileNotFoundException` at run time. The price is that the references no longer flow transitively, which is why
+  `WWCP_S2Tests` and `WWCP_S2_Samples` name Styx and Hermod themselves. Drop all of this once the two are published.
+* The package carries `README.md`, `THIRD-PARTY-NOTICES.md`, the XML documentation and a `.snupkg` symbol package;
+  `PublishRepositoryUrl` plus `EmbedUntrackedSources` give it SourceLink, and `Deterministic` with
+  `ContinuousIntegrationBuild` (set when `GITHUB_ACTIONS` is) make a CI build of the same commit reproducible.
+* **CI and nightly** mirror the Hermod and Styx workflows: the same two legs (`windows-latest` and Debian 13 in a
+  `debian:13` container), `fail-fast: false`, TRX artefacts on `!cancelled()`. Two differences are deliberate. This
+  gate *pins* Styx and Hermod (`STYX_REF`/`HERMOD_REF`), because this repository is downstream of Hermod work written
+  for it and an unpinned gate would report another repository's change as this one's breakage — and because a pin can
+  go stale unnoticed, the nightly builds the same code against both upstream `master`s and prints the drift. The
+  nightly also runs the `Timing` category fatally and probes `Multicast` informationally, since whether two sockets in
+  one process see each other's multicast is a property of the runner, not of this code.

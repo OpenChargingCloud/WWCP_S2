@@ -28,7 +28,18 @@
   </ItemGroup>
 
   <ItemGroup>
+    <!-- The public API baseline is embedded so the comparison also works when the tests run from
+         a copied output directory; PublicAPITests writes the file in the working tree back. -->
+    <EmbeddedResource Include="Architecture\PublicAPI.baseline.txt" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\WWCP_S2\WWCP_S2.csproj" />
+    <!-- The library keeps its Styx and Hermod references private so they cannot become bogus
+         package dependencies (see WWCP_S2.csproj), so this project names what it uses itself:
+         Hermod's HTTP, WebSocket, DNS and PKI types and Styx's Illias helpers. -->
+    <ProjectReference Include="..\..\Hermod\Hermod\Hermod.csproj" />
+    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj" />
   </ItemGroup>
 
 </Project>

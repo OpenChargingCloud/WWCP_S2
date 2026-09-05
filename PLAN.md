@@ -10,8 +10,8 @@ finding was adversarially verified; the confirmed findings are worked into this 
 (see §10 for the list of changes).
 
 Implementation status (2026-09-05): the user accepted all proposed defaults (§2, §7). Phases 0, 1a–1c,
-2a–2b, 3, 4, 5, 6a/6b, 7, 8, 9a–9c, 10a/10b and 11a are implemented (`CONVENTIONS.md` is the binding authoring guide,
-`CHANGELOG.md` lists the content); the next phase is 12 (documentation and packaging). Phase 11b (interop and conformance against s2-python/s2-rust) moves to a separate repository at the user's request (2026-09-05) and is no longer part of this plan. Phase 11a notes: the D13 spike ran and chose the self-signed-leaf fallback (see D13); `TLSProfiles`, `SelfSignedCA`, `CertificatePinStore` and `S2CertificateValidator` live in `Connect/Security/`; `AS2ConnectClient.CertificateValidator` enforces the pins and `AS2Node` pins the peer's `certificateFingerprint` map after pairing (`S2NodeOptions.EnforceCertificatePinning`, default true); the remaining 11a items are done as well: `S2RequestRateLimiter` wraps every route of the pairing and session initiation servers (503 + `Retry-After`, 429 optional), `MaxRequestBodySize`/`MaxHTTPBodySize`/`MaxWebSocketMessageSize` bound every input, and `S2LogRedaction`/`S2RedactingLoggerFactory` redact message and structured state of every log entry (`S2NodeOptions.RedactSecretsInLogs`, default true), proven by fuzz, negative and secrets-in-logs tests. Phase 10 notes: `AS2Node`
+2a–2b, 3, 4, 5, 6a/6b, 7, 8, 9a–9c, 10a/10b, 11a and 12 are implemented (`CONVENTIONS.md` is the binding authoring guide,
+`CHANGELOG.md` lists the content); phase 12 (documentation, public API baseline and packaging) is done as well, so every phase of this plan is implemented. Phase 11b (interop and conformance against s2-python/s2-rust) moves to a separate repository at the user's request (2026-09-05) and is no longer part of this plan. Phase 11a notes: the D13 spike ran and chose the self-signed-leaf fallback (see D13); `TLSProfiles`, `SelfSignedCA`, `CertificatePinStore` and `S2CertificateValidator` live in `Connect/Security/`; `AS2ConnectClient.CertificateValidator` enforces the pins and `AS2Node` pins the peer's `certificateFingerprint` map after pairing (`S2NodeOptions.EnforceCertificatePinning`, default true); the remaining 11a items are done as well: `S2RequestRateLimiter` wraps every route of the pairing and session initiation servers (503 + `Retry-After`, 429 optional), `MaxRequestBodySize`/`MaxHTTPBodySize`/`MaxWebSocketMessageSize` bound every input, and `S2LogRedaction`/`S2RedactingLoggerFactory` redact message and structured state of every log entry (`S2NodeOptions.RedactSecretsInLogs`, default true), proven by fuzz, negative and secrets-in-logs tests. Phase 10 notes: `AS2Node`
 composes the S2 Connect components from the deployment/role and establishes sessions automatically on pairing; the stop
 order is the specification's; `RMNode`/`CEMNode` carry the role behaviour and the FRBC control types are the
 `FRBCResourceManager`/`FRBCEnergyManager` `IS2ControlTypeHandler`s (a PEBC handler is deferred, so the PV sample is a
@@ -476,9 +476,34 @@ aware timestamps, 5 s reception-status budget, no double statuses), S2 Connect p
 HMAC vectors cross-checked; schema validation of every outgoing message; generated `CONFORMANCE.md` from the `S2C`
 test properties (the feature matrix of the s2-connect-implementations page).
 
-### Phase 12 – Documentation and packaging (M)
+### Phase 12 – Documentation and packaging (M) — **done**
 README (quick starts from the samples, architecture diagram, deployment/port table, feature matrix), XML-doc
 completeness check, `CHANGELOG.md`, NuGet packaging with `THIRD-PARTY-NOTICES.md`, public-API baseline.
+
+Implemented: `README.md` rewritten for a reader who has not seen this plan (quick starts for an RM, a CEM and plain
+S2 JSON over WebSockets, a Mermaid architecture diagram with the namespace table, a feature matrix that names the two
+gaps – no PEBC/PPBC/OMBC/DDBC handlers and no secret protection at rest – the deployment/port table, the security
+defaults and the build, test and packaging instructions), CI badges, and `CHANGELOG.md`. The XML-doc completeness
+check needs no separate tool: `GenerateDocumentationFile` plus `TreatWarningsAsErrors` make a missing `<summary>` on a
+public member a build error (CS1591), and the test and sample projects switch both off. The public-API baseline is
+`WWCP_S2Tests/Architecture/PublicAPI.baseline.txt`, rendered and compared by `PublicAPITests` (5,171 lines; regenerate
+with `S2_UPDATE_PUBLIC_API=1`), so an API change is a reviewable diff in the commit that causes it.
+
+Packaging found a real defect: `dotnet pack` turned the sibling ProjectReferences into the NuGet dependencies
+`org.GraphDefined.Vanaheimr.Hermod 1.0.0` (does not exist) and `Styx 1.0.0` – an id that on nuget.org belongs to an
+unrelated library by another author. Both are `PrivateAssets="all"` now, the CI `Package` step greps the generated
+`.nuspec` to keep it that way, and `build/cloud.charging.open.protocols.S2.targets` ships in the package so a consuming
+build without Styx and Hermod fails with `S2NUG001` and an instruction rather than a `FileNotFoundException` at run
+time (verified end to end against a local feed, in both directions). The package carries README, third-party notices,
+XML documentation, a `.snupkg` and SourceLink. Because the two references no longer flow transitively, `WWCP_S2Tests`
+and `WWCP_S2_Samples` name Styx and Hermod themselves.
+
+CI and nightly follow Hermod's and Styx's workflows: `windows-latest` and Debian 13 in a `debian:13` container,
+`fail-fast: false`, TRX artefacts. `nightly.yml` adds what a gate cannot answer – the `Timing` category (fatal), a
+`Multicast` probe (informational, because multicast is a property of the runner) and a build against Styx and Hermod
+`master` that prints how far the pinned revisions have drifted; that job exists because the `HERMOD_REF` pin had gone
+two phases stale unnoticed. `CONFORMANCE.md`, generated from the 591 `[S2C]` test properties, was part of the interop
+phase and moved out of this plan with it.
 
 
 ## 6. Dependencies between phases
