@@ -779,6 +779,13 @@ Folder `Connect/Security` (beside `SubnetCheck`/`ISubnetPolicy` from Phase 6).
   consuming build that lacks the two assemblies fails with `S2NUG001` and an instruction instead of a
   `FileNotFoundException` at run time. The price is that the references no longer flow transitively, which is why
   `WWCP_S2Tests` and `WWCP_S2_Samples` name Styx and Hermod themselves. Drop all of this once the two are published.
+* **`PackagePath` uses forward slashes, never the `\` of most NuGet examples**, and the package is built and
+  inspected on the Linux leg. A backslash separates paths on Windows and is an ordinary file name character on
+  Linux, so the same project packs into two different layouts: `PackagePath="buildTransitive\"` produced a
+  package that failed with NU5129 there ("at least one .targets file was found in 'buildTransitive/', but
+  '<PackageId>.targets' was not") while the same commit built and tested green - and `TreatWarningsAsErrors`
+  makes a NuGet pack warning an error too. The CI `Package` step therefore checks every expected entry of the
+  produced `.nupkg` by name.
 * The package carries `README.md`, `THIRD-PARTY-NOTICES.md`, the XML documentation and a `.snupkg` symbol package;
   `PublishRepositoryUrl` plus `EmbedUntrackedSources` give it SourceLink, and `Deterministic` with
   `ContinuousIntegrationBuild` (set when `GITHUB_ACTIONS` is) make a CI build of the same commit reproducible.
