@@ -17,7 +17,7 @@
 
 #region Usings
 
-using System.Text.Json.Nodes;
+using System.Text.Json;
 
 using Json.Schema;
 
@@ -81,12 +81,14 @@ namespace cloud.charging.open.protocols.S2.Tests
         private static EvaluationResults Validate(JObject JSON, String SchemaId)
         {
 
-            var schema = registry.Value.Get(new Uri(SchemaId)) as JsonSchema
-                             ?? throw new InvalidOperationException($"Schema '{SchemaId}' is not registered!");
+            var schema  = registry.Value.Get(new Uri(SchemaId)) as JsonSchema
+                              ?? throw new InvalidOperationException($"Schema '{SchemaId}' is not registered!");
 
-            var node   = JsonNode.Parse(JSON.ToString(Newtonsoft.Json.Formatting.None));
+            // JsonSchema.Net 9.x evaluates a JsonElement. The deserialised element is detached
+            // from its JsonDocument, therefore there is nothing to dispose here.
+            var element = JsonSerializer.Deserialize<JsonElement>(JSON.ToString(Newtonsoft.Json.Formatting.None));
 
-            return schema.Evaluate(node, evaluationOptions);
+            return schema.Evaluate(element, evaluationOptions);
 
         }
 
@@ -112,8 +114,8 @@ namespace cloud.charging.open.protocols.S2.Tests
             if (Results.IsValid)
                 return;
 
-            var errors = Results.Details.
-                             Where (d => d.HasErrors).
+            var errors = (Results.Details ?? [Results]).
+                             Where (d => d.Errors is not null && d.Errors.Count > 0).
                              Select(d => $"{d.InstanceLocation}: {String.Join("; ", d.Errors!.Select(e => e.Key + " " + e.Value))}");
 
             Assert.Fail("Schema validation failed:\n" + String.Join("\n", errors) + "\n\nJSON:\n" + JSON.ToString());

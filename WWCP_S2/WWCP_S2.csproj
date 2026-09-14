@@ -40,11 +40,11 @@
   <ItemGroup>
     <!-- Cryptographically insecure random helpers and URL-safe Base64 are banned, see BannedSymbols.txt. -->
     <AdditionalFiles Include="BannedSymbols.txt" />
-    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="3.3.4">
+    <PackageReference Include="Microsoft.CodeAnalysis.BannedApiAnalyzers" Version="5.6.0">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.11" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="10.0.12" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
   </ItemGroup>
 
@@ -65,7 +65,7 @@
       anyway. Once Vanaheimr publishes the two libraries, drop PrivateAssets and the .targets file.
     -->
     <ProjectReference Include="..\..\Hermod\Hermod\Hermod.csproj" PrivateAssets="all" />
-    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj"       PrivateAssets="all" />
+    <ProjectReference Include="..\..\Styx\Styx\Styx.csproj" PrivateAssets="all" />
   </ItemGroup>
 
   <ItemGroup>
