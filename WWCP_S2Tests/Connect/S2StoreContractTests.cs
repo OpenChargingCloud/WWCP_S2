@@ -250,11 +250,11 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             using var cts = new CancellationTokenSource();
             await cts.CancelAsync();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPairingsAsync        (null,       cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPairingsAsync        (LocalNodeA, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPairingAsync         (LocalNodeA, RemoteNode1, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.AddOrReplacePairingAsync(CreatePairing(LocalNodeA, RemoteNode2), cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.RemovePairingAsync      (LocalNodeA, RemoteNode1, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPairingsAsync        (null,       cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPairingsAsync        (LocalNodeA, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPairingAsync         (LocalNodeA, RemoteNode1, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.AddOrReplacePairingAsync(CreatePairing(LocalNodeA, RemoteNode2), cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.RemovePairingAsync      (LocalNodeA, RemoteNode1, cts.Token));
 
             Assert.That(await store.GetPairingsAsync(), Is.EqualTo(new[] { pairing }), "a cancelled operation changes nothing");
 
@@ -846,14 +846,14 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             using var cts = new CancellationTokenSource();
             await cts.CancelAsync();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.AddPendingAccessTokenAsync    (CreatePendingToken(LocalNodeA, RemoteNode1, CreatedAt2), cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPendingAccessTokensAsync   (LocalNodeA, RemoteNode1, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.FindPendingAccessTokenAsync   (pending.Token, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.ActivateAccessTokenAsync      (LocalNodeA, RemoteNode1, pending.Token, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.RemovePendingAccessTokensAsync(LocalNodeA, RemoteNode1, null, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.GetAccessTokenCandidatesAsync (LocalNodeA, RemoteNode1, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.UnpairAsync                   (LocalNodeA, RemoteNode1, UnpairedAt, cts.Token));
-            Assert.CatchAsync<OperationCanceledException>(async () => await store.GetUnpairedAtAsync            (LocalNodeA, RemoteNode1, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.AddPendingAccessTokenAsync    (CreatePendingToken(LocalNodeA, RemoteNode1, CreatedAt2), cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.GetPendingAccessTokensAsync   (LocalNodeA, RemoteNode1, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.FindPendingAccessTokenAsync   (pending.Token, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.ActivateAccessTokenAsync      (LocalNodeA, RemoteNode1, pending.Token, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.RemovePendingAccessTokensAsync(LocalNodeA, RemoteNode1, null, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.GetAccessTokenCandidatesAsync (LocalNodeA, RemoteNode1, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.UnpairAsync                   (LocalNodeA, RemoteNode1, UnpairedAt, cts.Token));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await store.GetUnpairedAtAsync            (LocalNodeA, RemoteNode1, cts.Token));
 
             Assert.That(await store.GetPairingAsync(LocalNodeA, RemoteNode1),              Is.EqualTo(pairing), "a cancelled operation changes nothing");
             Assert.That(await store.GetPendingAccessTokensAsync(LocalNodeA, RemoteNode1),  Is.EqualTo(new[] { pending }));

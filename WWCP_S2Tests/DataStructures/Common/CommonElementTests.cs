@@ -289,7 +289,7 @@ namespace cloud.charging.open.protocols.S2.Tests.DataStructures.Common
 
             Assert.That(json.Properties().Select(p => p.Name),  Is.EqualTo(new[] { "duration", "power_values" }));
             Assert.That(json["duration"]?.Value<Int64>(),       Is.EqualTo(900000));
-            Assert.That(json["power_values"],                   Has.Count.EqualTo(3));
+            Assert.That(json["power_values"] as JArray,         Has.Count.EqualTo(3));
 
             Assert.That(PowerForecastElement.TryParse(json, out var parsed, out var error), Is.True, error);
             Assert.That(parsed,                                       Is.EqualTo(element));
@@ -491,7 +491,7 @@ namespace cloud.charging.open.protocols.S2.Tests.DataStructures.Common
                 "id", "from", "to", "start_timers", "blocking_timers", "transition_costs", "transition_duration", "abnormal_condition_only"
             }));
             Assert.That(json["transition_duration"]?.Value<Int64>(),  Is.EqualTo(3000));
-            Assert.That(json["blocking_timers"],                      Has.Count.EqualTo(2));
+            Assert.That(json["blocking_timers"] as JArray,            Has.Count.EqualTo(2));
 
             Assert.That(Transition.TryParse(json, out var parsed, out var error), Is.True, error);
             Assert.That(parsed,                        Is.EqualTo(transition));

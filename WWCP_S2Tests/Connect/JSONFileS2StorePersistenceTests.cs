@@ -324,7 +324,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             store.Dispose();
 
             // The file records scheme "test-reverse"; the default plaintext protector uses "".
-            Assert.ThrowsAsync<NotSupportedException>(async () => await JSONFileS2Store.OpenAsync(path));
+            await Assert.ThrowsAsync<NotSupportedException>(async () => await JSONFileS2Store.OpenAsync(path));
 
         }
 
@@ -380,7 +380,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
                       ).ToString()
                   );
 
-            Assert.ThrowsAsync<NotSupportedException>(async () => await JSONFileS2Store.OpenAsync(path));
+            await Assert.ThrowsAsync<NotSupportedException>(async () => await JSONFileS2Store.OpenAsync(path));
 
         }
 

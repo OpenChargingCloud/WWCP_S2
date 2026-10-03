@@ -706,7 +706,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Messages.DDBC
                         Is.EqualTo(new[] { "message_type", "message_id", "start_time", "elements" }));
             Assert.That(json["message_type"]?.Value<String>(),  Is.EqualTo("DDBC.AverageDemandRateForecast"));
             Assert.That(json["start_time"]?.Value<String>(),    Is.EqualTo("2024-05-01T10:00:00Z"));
-            Assert.That(json["elements"],                       Has.Count.EqualTo(2));
+            Assert.That(json["elements"] as JArray,             Has.Count.EqualTo(2));
 
             S2SchemaValidator.AssertValidMessage(json, "DDBC.AverageDemandRateForecast");
 

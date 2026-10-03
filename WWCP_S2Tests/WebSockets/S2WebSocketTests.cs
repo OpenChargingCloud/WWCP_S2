@@ -153,7 +153,7 @@ namespace cloud.charging.open.protocols.S2.Tests.WebSockets
 
             var client = fixture.CreateClient("not-a-valid-token");
 
-            var exception = Assert.ThrowsAsync<S2WebSocketConnectException>(async () => await client.ConnectSessionAsync());
+            var exception = await Assert.ThrowsAsync<S2WebSocketConnectException>(async () => await client.ConnectSessionAsync());
             Assert.That(exception!.Response.HTTPStatusCode, Is.EqualTo(HTTPStatusCode.Unauthorized));
             Assert.That(fixture.Server.Sessions.Count(),     Is.EqualTo(0));
 
@@ -174,7 +174,7 @@ namespace cloud.charging.open.protocols.S2.Tests.WebSockets
             await WaitFor(fixture.Started);
 
             var second = fixture.CreateClient(token);
-            Assert.ThrowsAsync<S2WebSocketConnectException>(async () => await second.ConnectSessionAsync());
+            await Assert.ThrowsAsync<S2WebSocketConnectException>(async () => await second.ConnectSessionAsync());
 
             await first.CloseSessionAsync();
 

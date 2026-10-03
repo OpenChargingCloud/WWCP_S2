@@ -450,7 +450,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Messages.Common
             S2SchemaValidator.AssertValidMessage(json, "PowerMeasurement");
 
             Assert.That(json["measurement_timestamp"]?.Value<String>(),  Is.EqualTo("2024-08-24T14:00:00Z"));
-            Assert.That(json["values"],                                  Has.Count.EqualTo(3));
+            Assert.That(json["values"] as JArray,                        Has.Count.EqualTo(3));
 
             Assert.That(PowerMeasurement.TryParse(json, out var parsed, out var error, S2ParserOptions.Strict), Is.True, error);
             Assert.That(parsed,                         Is.EqualTo(message));
@@ -584,7 +584,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Messages.Common
             S2SchemaValidator.AssertValidMessage(json, "PowerForecast");
 
             Assert.That(json["start_time"]?.Value<String>(),  Is.EqualTo("2024-08-24T14:00:00Z"));
-            Assert.That(json["elements"],                     Has.Count.EqualTo(2));
+            Assert.That(json["elements"] as JArray,           Has.Count.EqualTo(2));
 
             Assert.That(PowerForecast.TryParse(json, out var parsed, out var error, S2ParserOptions.Strict), Is.True, error);
             Assert.That(parsed,                                          Is.EqualTo(message));

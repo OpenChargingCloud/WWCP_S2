@@ -136,7 +136,10 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(WANRegistryQuery.All.Limit,   Is.Null);
                 Assert.That(WANRegistryQuery.All.Offset,  Is.Null);
                 Assert.That(WANRegistryQuery.All,         Is.EqualTo(new WANRegistryQuery()));
+                // Read twice on purpose: All must hand out one shared instance.
+                #pragma warning disable NUnit2009
                 Assert.That(WANRegistryQuery.All,         Is.SameAs(WANRegistryQuery.All));
+                #pragma warning restore NUnit2009
             });
         }
 

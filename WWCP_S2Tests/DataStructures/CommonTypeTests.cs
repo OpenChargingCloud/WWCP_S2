@@ -58,8 +58,11 @@ namespace cloud.charging.open.protocols.S2.Tests.DataStructures
         public void MessageId_ComparesOrdinal_CaseSensitive()
         {
             Assert.That(Message_Id.Parse("abc"), Is.Not.EqualTo(Message_Id.Parse("ABC")));
+            // Two separately parsed equal values must compare equal and share their hash code.
+            #pragma warning disable NUnit2009
             Assert.That(Message_Id.Parse("abc"), Is.EqualTo(Message_Id.Parse("abc")));
             Assert.That(Message_Id.Parse("abc").GetHashCode(), Is.EqualTo(Message_Id.Parse("abc").GetHashCode()));
+            #pragma warning restore NUnit2009
         }
 
         #endregion

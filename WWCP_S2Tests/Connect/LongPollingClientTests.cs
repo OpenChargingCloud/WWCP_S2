@@ -715,7 +715,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
                 Assert.That(CodeOf(stops[0].StatusCode),       Is.EqualTo(400));
             });
 
-            Assert.DoesNotThrowAsync(async () => await polling.StopAsync(), "stopping a client that already stopped is harmless");
+            await Assert.DoesNotThrowAsync(async () => await polling.StopAsync(), "stopping a client that already stopped is harmless");
             Assert.That(polling.StopReason, Is.EqualTo(LongPollingStopReason.NotAvailable), "the reason is kept");
 
         }
@@ -923,7 +923,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             });
 
             Assert.That(() => polling.Start(), Throws.TypeOf<ObjectDisposedException>());
-            Assert.DoesNotThrowAsync(async () => await polling.DisposeAsync(), "disposing twice is harmless");
+            await Assert.DoesNotThrowAsync(async () => await polling.DisposeAsync(), "disposing twice is harmless");
 
         }
 

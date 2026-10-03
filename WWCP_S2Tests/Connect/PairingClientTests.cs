@@ -1336,8 +1336,8 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             var request  = new WaitForPairingRequest([ new WaitForPairingRequestItem(rm.Id) ]);
 
             // "The client must use a request time-out of at least 30 seconds".
-            Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Client.WaitForPairingAsync(request, TimeSpan.FromSeconds(10)));
-            Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Client.WaitForPairingAsync(request, TimeSpan.FromSeconds(29.999)));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Client.WaitForPairingAsync(request, TimeSpan.FromSeconds(10)));
+            await Assert.ThrowsAsync<ArgumentOutOfRangeException>(() => client.Client.WaitForPairingAsync(request, TimeSpan.FromSeconds(29.999)));
 
             Assert.That(S2ConnectDefaults.LongPollingClientTimeout, Is.EqualTo(TimeSpan.FromSeconds(30)));
 

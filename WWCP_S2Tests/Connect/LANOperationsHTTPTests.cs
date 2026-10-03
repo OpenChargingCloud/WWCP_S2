@@ -382,7 +382,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
         [Test]
         [S2C("LongPolling.NotAvailable")]
-        public void LongPollingWithoutLANOperations_IsRejected()
+        public async Task LongPollingWithoutLANOperations_IsRejected()
         {
 
             var options = PairingServerFixture.DefaultOptions() with {
@@ -390,7 +390,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
                               EnableLongPolling    = true
                           };
 
-            Assert.ThrowsAsync<ArgumentException>(async () => {
+            await Assert.ThrowsAsync<ArgumentException>(async () => {
                 await using var fixture = await PairingServerFixture.CreateAsync(Options: options);
             });
 

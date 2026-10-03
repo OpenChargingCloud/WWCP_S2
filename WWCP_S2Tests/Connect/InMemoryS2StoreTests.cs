@@ -104,9 +104,9 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
         #region Null guard
 
         [Test]
-        public void AddOrReplacePairing_RejectsNull()
+        public async Task AddOrReplacePairing_RejectsNull()
         {
-            Assert.ThrowsAsync<ArgumentNullException>(async () => await CreateStore().AddOrReplacePairingAsync(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await CreateStore().AddOrReplacePairingAsync(null!));
         }
 
         #endregion

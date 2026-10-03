@@ -274,12 +274,12 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
         #region QueryAsync_Null_Throws()
 
         [Test]
-        public void QueryAsync_Null_Throws()
+        public async Task QueryAsync_Null_Throws()
         {
 
             var registry = new InMemoryWANRegistry();
 
-            Assert.ThrowsAsync<ArgumentNullException>(async () => await registry.QueryAsync(null!));
+            await Assert.ThrowsAsync<ArgumentNullException>(async () => await registry.QueryAsync(null!));
 
         }
 

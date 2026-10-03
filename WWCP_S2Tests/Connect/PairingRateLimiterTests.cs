@@ -256,7 +256,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
             await cts.CancelAsync();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await waiter.WaitAsync(WaitTimeout));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await waiter.WaitAsync(WaitTimeout));
 
             Assert.That(limiter.QueueLength(nodeId), Is.EqualTo(1), "the cancelled request no longer counts");
 
@@ -305,7 +305,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
             limiter.Dispose();
 
-            Assert.ThrowsAsync<ObjectDisposedException>(async () => await limiter.TryAcquireAsync(nodeId));
+            await Assert.ThrowsAsync<ObjectDisposedException>(async () => await limiter.TryAcquireAsync(nodeId));
             Assert.DoesNotThrow(limiter.Dispose, "disposing twice is harmless");
 
         }

@@ -147,7 +147,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Node
 
             await using var fixture = await S2NodeFixture.CreateAsync(Start: false);
 
-            Assert.DoesNotThrowAsync(async () => await fixture.CEM.StopAsync());
+            await Assert.DoesNotThrowAsync(async () => await fixture.CEM.StopAsync());
 
             Assert.That(fixture.CEM.State, Is.EqualTo(S2NodeState.Created));
 
@@ -182,7 +182,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Node
 
             await using var fixture = await S2NodeFixture.CreateAsync(Start: false);
 
-            Assert.ThrowsAsync<InvalidOperationException>(
+            await Assert.ThrowsAsync<InvalidOperationException>(
                 () => fixture.RM.PairAsync(
                           fixture.CEM.Options.PairingUrl,
                           PairingToken.Parse("ABCDEF"),

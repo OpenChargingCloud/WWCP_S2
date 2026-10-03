@@ -889,7 +889,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
             await cts.CancelAsync();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await hanging.WaitAsync(Wait));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await hanging.WaitAsync(Wait));
             Assert.That(server.TryGetClientNode(nodeId, out var clientNode), Is.True, "the node was registered before the cancellation");
 
             Assert.Multiple(() => {
@@ -902,7 +902,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             using var cancelled = new CancellationTokenSource();
             await cancelled.CancelAsync();
 
-            Assert.CatchAsync<OperationCanceledException>(async () => await server.WaitAsync(Poll(nodeId), cancelled.Token).WaitAsync(Wait));
+            await Assert.CatchAsync<OperationCanceledException>(async () => await server.WaitAsync(Poll(nodeId), cancelled.Token).WaitAsync(Wait));
 
             Assert.Multiple(() => {
                 Assert.That(server.HangingRequests,      Is.Zero);

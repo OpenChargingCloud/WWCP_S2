@@ -93,7 +93,10 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
             // Secrets never appear in ToString().
             Assert.That(generated.ToString(),                             Does.Not.Contain(generated.Value));
+            // Two separately parsed equal tokens must compare equal.
+            #pragma warning disable NUnit2009
             Assert.That(PairingToken.Parse("abcd"),                       Is.EqualTo(PairingToken.Parse("abcd")));
+            #pragma warning restore NUnit2009
             Assert.That(PairingToken.Parse("abcd"),                       Is.Not.EqualTo(PairingToken.Parse("ABCD")));
 
         }
@@ -382,7 +385,9 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             Assert.That(TokenGenerator.NewStaticPairingToken().Length,           Is.EqualTo(8));
 
             // Two generated tokens never collide.
+            #pragma warning disable NUnit2009
             Assert.That(TokenGenerator.NewAccessToken(), Is.Not.EqualTo(TokenGenerator.NewAccessToken()));
+            #pragma warning restore NUnit2009
 
         }
 
