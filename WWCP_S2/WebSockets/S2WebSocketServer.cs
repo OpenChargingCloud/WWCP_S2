@@ -234,7 +234,7 @@ namespace cloud.charging.open.protocols.S2.WebSockets
         /// (S2 Connect, "Authentication") with 401 Unauthorized.
         /// </summary>
         private async Task<HTTPResponse?> ValidateConnectionAsync(DateTimeOffset             Timestamp,
-                                                                  AWebSocketServer           Server,
+                                                                  AWebSocketEndpoint         Server,
                                                                   WebSocketServerConnection  Connection,
                                                                   EventTracking_Id           EventTrackingId,
                                                                   CancellationToken          CancellationToken)
@@ -301,7 +301,7 @@ namespace cloud.charging.open.protocols.S2.WebSockets
         #region (private) NewConnectionAsync(...)
 
         private async Task NewConnectionAsync(DateTimeOffset             Timestamp,
-                                              AWebSocketServer           Server,
+                                              AWebSocketEndpoint         Server,
                                               WebSocketServerConnection  Connection,
                                               IEnumerable<String>        SharedSubprotocols,
                                               String?                    SelectedSubprotocol,
@@ -345,7 +345,7 @@ namespace cloud.charging.open.protocols.S2.WebSockets
         #region (private) TextMessageReceivedAsync(...)
 
         private Task TextMessageReceivedAsync(DateTimeOffset             Timestamp,
-                                              AWebSocketServer           Server,
+                                              AWebSocketEndpoint         Server,
                                               WebSocketServerConnection  Connection,
                                               WebSocketFrame             Frame,
                                               EventTracking_Id           EventTrackingId,
@@ -361,7 +361,7 @@ namespace cloud.charging.open.protocols.S2.WebSockets
         #region (private) CloseMessageReceivedAsync(...) / TCPConnectionClosedAsync(...)
 
         private Task CloseMessageReceivedAsync(DateTimeOffset                    Timestamp,
-                                               AWebSocketServer                  Server,
+                                               AWebSocketEndpoint                Server,
                                                WebSocketServerConnection         Connection,
                                                WebSocketFrame                    Frame,
                                                EventTracking_Id                  EventTrackingId,
@@ -373,7 +373,7 @@ namespace cloud.charging.open.protocols.S2.WebSockets
 
 
         private Task TCPConnectionClosedAsync(DateTimeOffset             Timestamp,
-                                              AWebSocketServer           Server,
+                                              AWebSocketEndpoint         Server,
                                               WebSocketServerConnection  Connection,
                                               EventTracking_Id           EventTrackingId,
                                               String?                    Reason,

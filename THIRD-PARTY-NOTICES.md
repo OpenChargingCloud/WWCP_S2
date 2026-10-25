@@ -4,9 +4,12 @@ WWCP S2 itself is licensed under the GNU Affero General Public License, version 
 (see `LICENSE`). The following third-party material is redistributed with this repository and
 inside the NuGet package under its own license.
 
-## S2 JSON (flexiblepower/s2-json), tag `v1.0.0`
+## S2 JSON (flexiblepower/s2-json), tag `v1.0.0` and the erratum after it
 
-* Upstream: https://github.com/flexiblepower/s2-json (commit `d58b2f027c7b40374e8d57aee72d1876ed9e0763`)
+* Upstream: https://github.com/flexiblepower/s2-json (commit `02772ed39752fba210f87b80e969a0be4ffd6e90`)
+* That is `v1.0.0` plus flexiblepower/s2-json#32, which corrects the descriptions of
+  FILL_RATE_BASED_CONTROL and DEMAND_DRIVEN_BASED_CONTROL in `ControlType.schema.json`
+  (v1.0.0 has them the wrong way round). No schema changed.
 * Copyright: FlexiblePower Alliance Network and contributors
 * License: Apache License 2.0 (full text below and in `WWCP_S2/Schemas/S2JSON/LICENSE`)
 * Files: `WWCP_S2/Schemas/S2JSON/v1.0.0/messages/*.schema.json`, `WWCP_S2/Schemas/S2JSON/v1.0.0/schemas/*.schema.json`
