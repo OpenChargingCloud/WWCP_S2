@@ -252,6 +252,25 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
         }
 
+        /// <summary>
+        /// S2 Connect requires the trailing slash of the pairing URL, not of the
+        /// initiateSessionUrl (only its example has one): a received initiateSessionUrl without
+        /// it is completed, even in strict mode, and written with it.
+        /// </summary>
+        [Test]
+        [S2C("Pairing.ConnectionDetails.InitiateSessionUrlSlash")]
+        public void ConnectionDetails_CompletesTheTrailingSlashOfTheInitiateSessionUrl()
+        {
+
+            var json = new ConnectionDetails(SessionURL, SessionAccessToken).ToJSON();
+            json["initiateSessionUrl"] = "https://cem.example.com/api/s2_pebc/connection";
+
+            Assert.That(ConnectionDetails.TryParse(json, out var parsed, out var error, S2ParserOptions.Strict), Is.True, error);
+            Assert.That(parsed!.InitiateSessionUrl.ToString(),                         Is.EqualTo("https://cem.example.com/api/s2_pebc/connection/"));
+            Assert.That(parsed. ToJSON()["initiateSessionUrl"]?.Value<String>(),       Is.EqualTo("https://cem.example.com/api/s2_pebc/connection/"));
+
+        }
+
         [Test]
         [S2C("Pairing.ConnectionDetails.SHA256")]
         public void ConnectionDetails_RequiresTheSHA256Fingerprint_WhenFingerprintsAreGiven()
@@ -332,6 +351,10 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
             var versioned = new ConnectionDetails(SessionURL, SessionAccessToken).ToJSON();
             versioned["initiateSessionUrl"] = "https://cem.example.com/connection/v1/";
             Assert.That(ConnectionDetails.TryParse(versioned, out _, out error), Is.False);
+            Assert.That(error, Does.Contain("initiateSessionUrl").And.Contain("version"));
+
+            versioned["initiateSessionUrl"] = "https://cem.example.com/connection/v1";
+            Assert.That(ConnectionDetails.TryParse(versioned, out _, out error), Is.False, "completing the slash does not let a version through");
             Assert.That(error, Does.Contain("initiateSessionUrl").And.Contain("version"));
 
             var badToken = new ConnectionDetails(SessionURL, SessionAccessToken).ToJSON();

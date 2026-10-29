@@ -170,6 +170,13 @@ namespace cloud.charging.open.protocols.S2.Connect
         //
         // The initiateSessionUrl follows the base URL rules of S2 Connect (scheme "https://", no API version,
         // trailing slash, see S2BaseURL); "http://" is accepted only with S2ParserOptions.AllowInsecureURLs.
+        //
+        // The trailing slash is a "must" of the specification text only for the pairing URL ("Pairing URL"),
+        // the longpollingUrl and the pairingUrl of the WAN endpoint registry. Of the initiateSessionUrl it says
+        // "The base URL for the connection process (does not include the version number)", and only its example
+        // (https://hostname.local/connection/) has the slash. A received initiateSessionUrl without it is
+        // therefore accepted and completed with the slash; the URLs this library writes always have it.
+        // (The S2 CEM library of the ElaadNL Residential Flexibility initiative sends ".../connection".)
 
         #endregion
 
@@ -242,6 +249,11 @@ namespace cloud.charging.open.protocols.S2.Connect
                 {
                     return false;
                 }
+
+                initiateSessionUrlText = initiateSessionUrlText.Trim();
+
+                if (!initiateSessionUrlText.EndsWith('/'))
+                    initiateSessionUrlText += "/";
 
                 if (!S2BaseURL.TryParse(initiateSessionUrlText,
                                         out S2BaseURL initiateSessionUrl,

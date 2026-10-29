@@ -159,6 +159,11 @@ independent of the S2 JSON and S2 Connect versions it implements.
   could have resolved to a foreign assembly the day that version appeared. Both references are private now, the CI
   package step verifies it, and a `buildTransitive` target explains the two assemblies a consumer has to supply
   (`S2NUG001`).
+- A received `initiateSessionUrl` without a trailing slash is accepted and completed with it, instead of failing the
+  pairing after `requestConnectionDetails`. S2 Connect 1.0.0 makes the slash a "must" only of the pairing URL (and of
+  the `longpollingUrl` and the registry's `pairingUrl`); of the `initiateSessionUrl` only its example has one. The URLs
+  this library writes keep the slash. Found with the S2 CEM library of the ElaadNL Residential Flexibility initiative,
+  which sends `…/api/s2_pebc/connection`.
 
 ### Fixed (after the phase 0–3 code review)
 

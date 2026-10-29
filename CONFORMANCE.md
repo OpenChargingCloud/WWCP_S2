@@ -30,7 +30,7 @@ reference implementations in
 | [LAN](#lan) | 7 | 35 |
 | [LANOperations](#lanoperations) | 1 | 2 |
 | [LongPolling](#longpolling) | 19 | 44 |
-| [Pairing](#pairing) | 63 | 204 |
+| [Pairing](#pairing) | 64 | 205 |
 | [PairingToken](#pairingtoken) | 2 | 16 |
 | [Reconnection](#reconnection) | 9 | 19 |
 | [Registry](#registry) | 13 | 62 |
@@ -39,7 +39,7 @@ reference implementations in
 | [Store](#store) | 1 | 1 |
 | [Unpairing](#unpairing) | 7 | 23 |
 | [Versioning](#versioning) | 2 | 11 |
-| **Total** | **219** | **589** |
+| **Total** | **220** | **590** |
 
 ## ChallengeResponse
 
@@ -361,6 +361,7 @@ reference implementations in
 | `Pairing.ChallengeResponse.LAN` | `Connect.PairingClientTests.Pair_LANServerWithoutAssumedFingerprint_ReturnsInvalidConfigurationBeforeAnyAttempt` |
 | `Pairing.ChallengeResponse.WAN` | `Connect.ConnectTypeTests.ChallengeResponse_WAN_MatchesTheKnownAnswer_AndNormalisesTheDomain` |
 | `Pairing.ChallengeResponse.WAN` | `Connect.LocalEndpointTests.DomainName_IsTheNormalisedHostOfThePairingUrl` |
+| `Pairing.ConnectionDetails.InitiateSessionUrlSlash` | `Connect.PairingDTOTests.ConnectionDetails_CompletesTheTrailingSlashOfTheInitiateSessionUrl` |
 | `Pairing.ConnectionDetails.SHA256` | `Connect.PairingDTOTests.ConnectionDetails_RequiresTheSHA256Fingerprint_WhenFingerprintsAreGiven` |
 | `Pairing.ConnectionDetails.SHA256` | `Connect.PairingDTOTests.ConnectionDetails_RoundTrips_WithCamelCaseKeys` |
 | `Pairing.ConnectionDetails.SHA265Typo` | `Connect.PairingDTOTests.ConnectionDetails_ToleratesTheSHA265TypoOfTheOpenAPIFile_ButAlwaysWritesSHA256` |
