@@ -62,6 +62,11 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
         /// </summary>
         public const String  DefaultSessionPath  = "/connection/";
 
+        /// <summary>
+        /// Every port FreePort() has handed out in this test run.
+        /// </summary>
+        private static readonly HashSet<UInt16>  handedOutPorts  = [];
+
         #endregion
 
         #region Properties
@@ -233,13 +238,27 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect
 
         #region (static) FreePort()
 
+        /// <summary>
+        /// A loopback port that was free a moment ago and has not been handed out before in
+        /// this test run. The probing listener is stopped before the port is returned, so the
+        /// kernel may offer the same port to the next probe: a fixture that asks for several
+        /// ports before it binds any of them (S2NodeFixture) would otherwise get the same port
+        /// twice and fail with "Address already in use".
+        /// </summary>
         public static IPPort FreePort()
         {
-            var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
-            listener.Start();
-            var port = ((IPEndPoint) listener.LocalEndpoint).Port;
-            listener.Stop();
-            return IPPort.Parse((UInt16) port);
+            lock (handedOutPorts)
+            {
+                while (true)
+                {
+                    var listener = new TcpListener(System.Net.IPAddress.Loopback, 0);
+                    listener.Start();
+                    var port = (UInt16) ((IPEndPoint) listener.LocalEndpoint).Port;
+                    listener.Stop();
+                    if (handedOutPorts.Add(port))
+                        return IPPort.Parse(port);
+                }
+            }
         }
 
         #endregion
