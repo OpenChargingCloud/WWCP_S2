@@ -27,8 +27,8 @@ concurrency:
 
 env:
   # The same pins as ci.yml — bump them there, they are copied here.
-  STYX_REF: f494c8cd464a6ec19c1caa97c3d4e9ca9d04f0cb
-  HERMOD_REF: 14c9701c9a851279bf2ba2b0780d71b00e176a32
+  STYX_REF: a6b9f9fbcedce1f4771ed0d013db288ab465b518
+  HERMOD_REF: 4b8be28a41636d72e1a5dec57aad26f1f15ccd8b
 
 jobs:
 
@@ -69,7 +69,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
       - name: Build
         working-directory: WWCP_S2
@@ -161,7 +161,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
       - name: Report the drift
         shell: bash

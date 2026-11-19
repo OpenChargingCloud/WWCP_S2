@@ -40,8 +40,8 @@ concurrency:
 #
 # Bump these deliberately, in the commit that needs the new upstream code.
 env:
-  STYX_REF: f494c8cd464a6ec19c1caa97c3d4e9ca9d04f0cb
-  HERMOD_REF: 14c9701c9a851279bf2ba2b0780d71b00e176a32
+  STYX_REF: a6b9f9fbcedce1f4771ed0d013db288ab465b518
+  HERMOD_REF: 4b8be28a41636d72e1a5dec57aad26f1f15ccd8b
 
 jobs:
   build-and-test:
@@ -98,7 +98,7 @@ jobs:
 
       - uses: actions/setup-dotnet@v6
         with:
-          dotnet-version: '10.0.x'
+          dotnet-version: '11.0.x'
 
       # Not the solution: WWCP_S2.slnx carries Hermod and Styx — including THEIR test
       # projects — in a "Dependencies" folder for the IDE, and building those here would
@@ -174,7 +174,7 @@ jobs:
 
           # The readme PackageReadmeFile points at, the notices and the targets that tell a
           # consumer about Styx and Hermod all have to be exactly where they are expected.
-          for entry in README.md THIRD-PARTY-NOTICES.md buildTransitive/cloud.charging.open.protocols.S2.targets lib/net10.0/cloud.charging.open.protocols.S2.dll lib/net10.0/cloud.charging.open.protocols.S2.xml; do
+          for entry in README.md THIRD-PARTY-NOTICES.md buildTransitive/cloud.charging.open.protocols.S2.targets lib/net11.0/cloud.charging.open.protocols.S2.dll lib/net11.0/cloud.charging.open.protocols.S2.xml; do
             unzip -Z1 "$package" | grep -qxF "$entry" || { echo "::error::The package does not contain '$entry'."; exit 1; }
           done
 

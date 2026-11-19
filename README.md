@@ -6,7 +6,7 @@
 An implementation of the **S2 standard** for energy flexibility (EN 50491-12-2, wire format
 [S2 JSON v1.0.0](https://github.com/flexiblepower/s2-json)) and of
 [**S2 Connect 1.0.0**](https://docs.s2standard.org/s2-connect/1.0.0/) (discovery, pairing,
-session initiation and unpairing) in C# / .NET 10.
+session initiation and unpairing) in C# / .NET 11.
 
 S2 defines how a *Customer Energy Manager* (CEM) and *Resource Managers* (RM) of flexible
 devices such as EV chargers, heat pumps, batteries and PV systems exchange flexibility

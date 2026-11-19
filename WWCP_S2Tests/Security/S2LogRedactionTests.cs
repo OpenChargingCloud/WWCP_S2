@@ -570,7 +570,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Security
                 builder.Append("""{"clientNodeId": "node-1", "accessToken": "a\"b\\c", "note": "\\", "pairingAttemptId": "x"} """);
 
             // An unterminated, deeply escaped value: the worst case of the JSON value pattern.
-            builder.Append("{\"accessToken\": \"").Append(new String('\\', 512));
+            builder.Append("{\"accessToken\": \"").Append('\\', 512);
 
             var adversarial  = builder.ToString();
 

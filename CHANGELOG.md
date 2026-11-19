@@ -151,6 +151,13 @@ independent of the S2 JSON and S2 Connect versions it implements.
   The `PVRM` sample is no longer a skeleton: it registers a `PEBCResourceManager` for a 4 kWp inverter whose feed-in the
   CEM may curtail. 31 tests drive the four pairs over real sessions.
 
+### Changed
+
+- Targets .NET 11 (`net11.0`), as Styx and Hermod do since Styx `2874a327`; CI and nightly install the .NET 11 SDK,
+  and the pins move to Styx `a6b9f9fb` and Hermod `4b8be28a`. The explicit reference to
+  `Microsoft.Extensions.Logging.Abstractions` is gone: .NET 11 provides it, and the SDK prunes it (NU1510), so the
+  package no longer declares it as a dependency.
+
 ### Fixed
 
 - The generated NuGet package no longer declares the sibling source projects as dependencies. `dotnet pack` had
