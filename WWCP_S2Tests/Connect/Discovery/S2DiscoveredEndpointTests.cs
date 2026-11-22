@@ -56,7 +56,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                     Name,
                     LogoUrl);
 
-        private static S2DiscoveredEndpoint Endpoint(IIPAddress[]?      Addresses   = null,
+        private static S2DiscoveredEndpoint Endpoint(IPAddress[]?      Addresses   = null,
                                                      S2DNSSDTXTRecord?  Record      = null,
                                                      Boolean?           HostsCEM    = false,
                                                      Boolean?           HostsRM     = true,
@@ -96,7 +96,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(endpoint.HostName.FullName,      Is.EqualTo("hp.local."));
                 Assert.That(endpoint.Port,                   Is.EqualTo(IPPort.Parse(8443)));
                 Assert.That(endpoint.Addresses,              Has.Count.EqualTo(2));
-                Assert.That(endpoint.Addresses,              Is.EqualTo(new IIPAddress[] { Address4, Address6 }), "duplicates are dropped, the order is kept");
+                Assert.That(endpoint.Addresses,              Is.EqualTo(new IPAddress[] { Address4, Address6 }), "duplicates are dropped, the order is kept");
                 Assert.That(endpoint.TXT,                    Is.EqualTo(TXTRecord()));
                 Assert.That(endpoint.HostsCEM,               Is.True);
                 Assert.That(endpoint.HostsRM,                Is.False);
@@ -198,7 +198,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(updated.InstanceName,          Is.EqualTo(InstanceName));
                 Assert.That(updated.HostName,              Is.EqualTo(HostName));
                 Assert.That(updated.Port,                  Is.EqualTo(DefaultPort));
-                Assert.That(updated.Addresses,             Is.EqualTo(new IIPAddress[] { Address4 }));
+                Assert.That(updated.Addresses,             Is.EqualTo(new IPAddress[] { Address4 }));
                 Assert.That(updated.TXT,                   Is.SameAs(otherTXT));
                 Assert.That(updated.Name,                  Is.EqualTo("Boiler"));
                 Assert.That(updated.HostsCEM,              Is.True);

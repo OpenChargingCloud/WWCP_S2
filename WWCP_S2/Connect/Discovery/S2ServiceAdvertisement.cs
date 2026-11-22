@@ -80,7 +80,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// The optional addresses of the host (default: the addresses of the network interfaces).
         /// </summary>
-        public IReadOnlyList<IIPAddress>?          Addresses       { get; }
+        public IReadOnlyList<IPAddress>?          Addresses       { get; }
 
         /// <summary>
         /// The DNS-SD service instance name: "&lt;first label of the host name&gt;._s2connect._tcp.local.".
@@ -103,7 +103,7 @@ namespace cloud.charging.open.protocols.S2.Connect
                                       IPPort                             Port,
                                       S2DNSSDTXTRecord                   TXT,
                                       IEnumerable<EnergyManagementRole>?  Roles       = null,
-                                      IEnumerable<IIPAddress>?           Addresses   = null)
+                                      IEnumerable<IPAddress>?           Addresses   = null)
         {
 
             ArgumentNullException.ThrowIfNull(HostName);
@@ -178,7 +178,7 @@ namespace cloud.charging.open.protocols.S2.Connect
                                                                IEnumerable<EnergyManagementRole>?  Roles            = null,
                                                                DomainName?                         HostName         = null,
                                                                IPPort?                             Port             = null,
-                                                               IEnumerable<IIPAddress>?            Addresses        = null)
+                                                               IEnumerable<IPAddress>?            Addresses        = null)
         {
 
             ArgumentNullException.ThrowIfNull(Endpoint);
@@ -222,7 +222,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <param name="Addresses">The addresses of the host (default: the explicit addresses of this advertisement).</param>
         /// <param name="HostRecordTimeToLive">The time-to-live of the SRV, A and AAAA records (default: 120 s).</param>
         /// <param name="SharedRecordTimeToLive">The time-to-live of the PTR and TXT records (default: 75 minutes).</param>
-        public IReadOnlyList<IDNSResourceRecord> ToResourceRecords(IEnumerable<IIPAddress>?  Addresses                = null,
+        public IReadOnlyList<IDNSResourceRecord> ToResourceRecords(IEnumerable<IPAddress>?  Addresses                = null,
                                                                    TimeSpan?                 HostRecordTimeToLive     = null,
                                                                    TimeSpan?                 SharedRecordTimeToLive   = null)
         {

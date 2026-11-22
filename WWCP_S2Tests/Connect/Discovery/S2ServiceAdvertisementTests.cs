@@ -54,7 +54,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                     LogoUrl:       HeatPumpLogo);
 
         private static S2ServiceAdvertisement Advertisement(EnergyManagementRole[]?  Roles       = null,
-                                                            IIPAddress[]?            Addresses   = null,
+                                                            IPAddress[]?            Addresses   = null,
                                                             IPPort?                  Port        = null)
             => new (HeatPumpHost,
                     Port  ?? HeatPumpPort,
@@ -116,7 +116,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
             Assert.Multiple(() => {
                 Assert.That(() => new S2ServiceAdvertisement(HeatPumpHost, HeatPumpPort, TXTRecord(), Addresses: []), Throws.ArgumentException);
                 Assert.That(Advertisement().Addresses,                        Is.Null, "no explicit addresses by default");
-                Assert.That(Advertisement(Addresses: [ Address4 ]).Addresses, Is.EqualTo(new IIPAddress[] { Address4 }));
+                Assert.That(Advertisement(Addresses: [ Address4 ]).Addresses, Is.EqualTo(new IPAddress[] { Address4 }));
             });
         }
 
@@ -297,7 +297,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(advertisement.TXT.LongPollingUrl,     Is.EqualTo(HeatPumpLongPollingUrl));
                 Assert.That(advertisement.TXT.EndpointName,       Is.EqualTo("Heat pump"));
                 Assert.That(advertisement.Roles,                  Is.EqualTo(new[] { EnergyManagementRole.RM }));
-                Assert.That(advertisement.Addresses,              Is.EqualTo(new IIPAddress[] { Address4, Address6 }));
+                Assert.That(advertisement.Addresses,              Is.EqualTo(new IPAddress[] { Address4, Address6 }));
             });
 
         }

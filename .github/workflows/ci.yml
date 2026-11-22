@@ -40,8 +40,8 @@ concurrency:
 #
 # Bump these deliberately, in the commit that needs the new upstream code.
 env:
-  STYX_REF: a6b9f9fbcedce1f4771ed0d013db288ab465b518
-  HERMOD_REF: 4b8be28a41636d72e1a5dec57aad26f1f15ccd8b
+  STYX_REF: ff807a461e7928cc52042111b44333f92aa86422
+  HERMOD_REF: d27b68b03c0d7cadc7de2ad0e4ac03330aaff21b
 
 jobs:
   build-and-test:

@@ -146,7 +146,7 @@ namespace cloud.charging.open.protocols.S2.WebSockets
         /// <param name="TimeProvider">An optional time provider for the sessions.</param>
         /// <param name="LoggerFactory">An optional logger factory.</param>
         /// <param name="AutoStart">Whether to start the server immediately.</param>
-        public S2WebSocketServer(IIPAddress?                                               IPAddress                    = null,
+        public S2WebSocketServer(IPAddress?                                               IPAddress                    = null,
                                  IPPort?                                                   HTTPPort                     = null,
                                  EnergyManagementRole?                                     ServerRole                   = null,
                                  HTTPPath?                                                 WebSocketPath                = null,

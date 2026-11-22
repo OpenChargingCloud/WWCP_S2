@@ -206,7 +206,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(current.TXT.LongPollingUrl,        Is.Null);
                 Assert.That(current.TXT.EndpointName,          Is.EqualTo("Heat pump"));
                 Assert.That(current.Roles,                     Is.EquivalentTo(new[] { EnergyManagementRole.RM }));
-                Assert.That(current.Addresses,                 Is.EqualTo(new IIPAddress[] { IPv4Address.Localhost }));
+                Assert.That(current.Addresses,                 Is.EqualTo(new IPAddress[] { IPv4Address.Localhost }));
                 Assert.That(recorder.Advertised,               Has.Count.EqualTo(1));
                 Assert.That(recorder.Advertised.First(),       Is.EqualTo(current));
                 Assert.That(recorder.Withdrawn,                Is.Empty);
@@ -215,7 +215,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(browser.Endpoints[0].PairingUrl,   Is.EqualTo(endpoint.PairingUrl));
                 Assert.That(browser.Endpoints[0].Name,         Is.EqualTo("Heat pump"));
                 Assert.That(browser.Endpoints[0].HostsRM,      Is.True);
-                Assert.That(browser.Endpoints[0].Addresses,    Is.EqualTo(new IIPAddress[] { IPv4Address.Localhost }));
+                Assert.That(browser.Endpoints[0].Addresses,    Is.EqualTo(new IPAddress[] { IPv4Address.Localhost }));
             });
 
             // The periodic check does not announce an unchanged advertisement again.

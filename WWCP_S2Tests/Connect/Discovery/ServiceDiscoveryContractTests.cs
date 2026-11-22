@@ -168,7 +168,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(endpoint.PairingUrl?.Value,              Is.EqualTo("https://hp.local:8443/pairing/"));
                 Assert.That(endpoint.Name,                           Is.EqualTo("Heat pump"));
                 Assert.That(endpoint.HostsRM,                        Is.True);
-                Assert.That(endpoint.Addresses,                      Is.EqualTo(new IIPAddress[] { IPv4Address.Parse("10.0.0.7") }));
+                Assert.That(endpoint.Addresses,                      Is.EqualTo(new IPAddress[] { IPv4Address.Parse("10.0.0.7") }));
                 Assert.That(appeared,                                Has.Count.EqualTo(1));
                 Assert.That(browser.Role,                            Is.EqualTo(EnergyManagementRole.RM));
                 Assert.That(handle.IsPublished,                      Is.True);
@@ -244,7 +244,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(browser.Endpoints,                            Has.Count.EqualTo(1));
                 Assert.That(browser.Endpoints[0].InstanceName.FullName,   Is.EqualTo("hp._s2connect._tcp.local."));
                 Assert.That(browser.Endpoints[0],                         Is.EqualTo(endpoint));
-                Assert.That(browser.Endpoints[0].Addresses,               Is.EqualTo(new IIPAddress[] { IPv4Address.Parse("10.0.0.7") }));
+                Assert.That(browser.Endpoints[0].Addresses,               Is.EqualTo(new IPAddress[] { IPv4Address.Parse("10.0.0.7") }));
             });
 
         }

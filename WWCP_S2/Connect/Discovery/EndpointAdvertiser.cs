@@ -66,7 +66,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// Optional explicit addresses of the host (default: the addresses of the network interfaces).
         /// </summary>
-        public IEnumerable<IIPAddress>?  Addresses                  { get; init; }
+        public IEnumerable<IPAddress>?  Addresses                  { get; init; }
 
     }
 

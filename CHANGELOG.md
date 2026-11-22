@@ -157,6 +157,9 @@ independent of the S2 JSON and S2 Connect versions it implements.
   and the pins move to Styx `a6b9f9fb` and Hermod `4b8be28a`. The explicit reference to
   `Microsoft.Extensions.Logging.Abstractions` is gone: .NET 11 provides it, and the SDK prunes it (NU1510), so the
   package no longer declares it as a dependency.
+- Follows Hermod `86b8b083`, where `IPAddress` is one value (IPv4 or IPv6) in place of the interface `IIPAddress`:
+  every public signature that took or returned `IIPAddress` now uses `IPAddress` (a struct, so an optional one is
+  `IPAddress?`); the pins move to Styx `ff807a46` and Hermod `d27b68b0`.
 
 ### Fixed
 

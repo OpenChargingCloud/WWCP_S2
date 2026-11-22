@@ -147,7 +147,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// The addresses of this host announced by advertisements without explicit addresses.
         /// </summary>
-        public IReadOnlyList<IIPAddress>     LocalAddresses
+        public IReadOnlyList<IPAddress>     LocalAddresses
             => Transport.LocalAddresses;
 
         /// <summary>
@@ -399,7 +399,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// The announced addresses of the host.
         /// </summary>
-        public IReadOnlyList<IIPAddress>  Addresses        { get; }
+        public IReadOnlyList<IPAddress>  Addresses        { get; }
 
         /// <summary>
         /// The publication of the Multicast DNS responder, once published.
@@ -434,7 +434,7 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         internal DNSSDAdvertiser(DNSSDServiceDiscovery      Discovery,
                                  S2ServiceAdvertisement     Advertisement,
-                                 IReadOnlyList<IIPAddress>  Addresses,
+                                 IReadOnlyList<IPAddress>  Addresses,
                                  ILogger?                   Logger)
         {
 

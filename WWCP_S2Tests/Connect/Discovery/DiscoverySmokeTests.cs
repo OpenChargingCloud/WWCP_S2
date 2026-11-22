@@ -142,7 +142,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(endpoint.Name,                        Is.EqualTo("Heat pump"));
                 Assert.That(endpoint.HostsRM,                     Is.True);
                 Assert.That(endpoint.HostsCEM,                    Is.False);
-                Assert.That(endpoint.Addresses,                   Is.EqualTo(new IIPAddress[] { IPv4Address.Localhost }));
+                Assert.That(endpoint.Addresses,                   Is.EqualTo(new IPAddress[] { IPv4Address.Localhost }));
                 Assert.That(appeared,                             Has.Count.EqualTo(1));
             });
 
@@ -211,7 +211,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(endpoint.Port,                    Is.EqualTo(server.Port));
                 Assert.That(endpoint.PairingUrl,              Is.EqualTo(server.PairingUrl));
                 Assert.That(endpoint.HostsRM,                 Is.True);
-                Assert.That(endpoint.Addresses,               Is.EqualTo(new IIPAddress[] { IPv4Address.Localhost }));
+                Assert.That(endpoint.Addresses,               Is.EqualTo(new IPAddress[] { IPv4Address.Localhost }));
             });
 
             // ".local" names resolve through the hybrid DNS client of the discovery.

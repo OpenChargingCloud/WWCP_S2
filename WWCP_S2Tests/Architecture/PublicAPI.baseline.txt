@@ -247,7 +247,7 @@ class cloud.charging.open.protocols.S2.WebSockets.S2WebSocketClient : org.GraphD
     cloud.charging.open.protocols.S2.Session.S2SessionOptions SessionOptions { get; }
 
 class cloud.charging.open.protocols.S2.WebSockets.S2WebSocketServer : org.GraphDefined.Vanaheimr.Hermod.WebSocket.WebSocketServer
-    .ctor(org.GraphDefined.Vanaheimr.Hermod.IIPAddress IPAddress, org.GraphDefined.Vanaheimr.Hermod.IPPort? HTTPPort, cloud.charging.open.protocols.S2.EnergyManagementRole? ServerRole, org.GraphDefined.Vanaheimr.Hermod.HTTP.HTTPPath? WebSocketPath, cloud.charging.open.protocols.S2.WebSockets.CommunicationTokenStore TokenStore, cloud.charging.open.protocols.S2.WebSockets.ValidateCommunicationTokenDelegate TokenValidator, cloud.charging.open.protocols.S2.WebSockets.S2SessionOptionsFactory SessionOptionsFactory, System.String NegotiatedVersion, System.TimeSpan? WebSocketPingEvery, System.String HTTPServerName, org.GraphDefined.Vanaheimr.Illias.I18NString Description, org.GraphDefined.Vanaheimr.Hermod.ServerCertificateSelectorDelegate ServerCertificateSelector, org.GraphDefined.Vanaheimr.Hermod.RemoteTLSClientCertificateValidationHandler<org.GraphDefined.Vanaheimr.Hermod.TCP.ITCPServer> ClientCertificateValidator, org.GraphDefined.Vanaheimr.Hermod.LocalCertificateSelectionHandler LocalCertificateSelector, System.Security.Authentication.SslProtocols? AllowedTLSProtocols, System.Boolean? ClientCertificateRequired, System.Boolean? CheckCertificateRevocation, System.UInt32? MaxClientConnections, org.GraphDefined.Vanaheimr.Hermod.DNS.IDNSClient DNSClient, System.TimeProvider TimeProvider, Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory, System.Boolean AutoStart)
+    .ctor(org.GraphDefined.Vanaheimr.Hermod.IPAddress? IPAddress, org.GraphDefined.Vanaheimr.Hermod.IPPort? HTTPPort, cloud.charging.open.protocols.S2.EnergyManagementRole? ServerRole, org.GraphDefined.Vanaheimr.Hermod.HTTP.HTTPPath? WebSocketPath, cloud.charging.open.protocols.S2.WebSockets.CommunicationTokenStore TokenStore, cloud.charging.open.protocols.S2.WebSockets.ValidateCommunicationTokenDelegate TokenValidator, cloud.charging.open.protocols.S2.WebSockets.S2SessionOptionsFactory SessionOptionsFactory, System.String NegotiatedVersion, System.TimeSpan? WebSocketPingEvery, System.String HTTPServerName, org.GraphDefined.Vanaheimr.Illias.I18NString Description, org.GraphDefined.Vanaheimr.Hermod.ServerCertificateSelectorDelegate ServerCertificateSelector, org.GraphDefined.Vanaheimr.Hermod.RemoteTLSClientCertificateValidationHandler<org.GraphDefined.Vanaheimr.Hermod.TCP.ITCPServer> ClientCertificateValidator, org.GraphDefined.Vanaheimr.Hermod.LocalCertificateSelectionHandler LocalCertificateSelector, System.Security.Authentication.SslProtocols? AllowedTLSProtocols, System.Boolean? ClientCertificateRequired, System.Boolean? CheckCertificateRevocation, System.UInt32? MaxClientConnections, org.GraphDefined.Vanaheimr.Hermod.DNS.IDNSClient DNSClient, System.TimeProvider TimeProvider, Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory, System.Boolean AutoStart)
     System.Boolean TryGetSession(org.GraphDefined.Vanaheimr.Hermod.WebSocket.WebSocketServerConnection Connection, out cloud.charging.open.protocols.S2.Session.S2Session Session)
     System.Collections.Generic.IEnumerable<cloud.charging.open.protocols.S2.Session.S2Session> Sessions { get; }
     System.TimeProvider TimeProvider { get; }
@@ -945,7 +945,7 @@ sealed class cloud.charging.open.protocols.S2.Connect.ConnectionDetails : System
 sealed class cloud.charging.open.protocols.S2.Connect.DNSSDAdvertiser : System.IAsyncDisposable, cloud.charging.open.protocols.S2.Connect.IServiceAdvertisementHandle
     System.Boolean HasConflict { get; }
     System.Boolean IsPublished { get; }
-    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses { get; }
+    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses { get; }
     System.String ToString()
     System.Threading.Tasks.Task UpdateAsync(cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement, System.Threading.CancellationToken CancellationToken)
     System.Threading.Tasks.Task WithdrawAsync(System.Threading.CancellationToken CancellationToken)
@@ -971,7 +971,7 @@ sealed class cloud.charging.open.protocols.S2.Connect.DNSSDServiceDiscovery : Sy
     Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory { get; }
     System.Boolean IsRunning { get; }
     System.Collections.Generic.IReadOnlyList<cloud.charging.open.protocols.S2.Connect.IServiceAdvertisementHandle> Advertisements { get; }
-    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> LocalAddresses { get; }
+    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IPAddress> LocalAddresses { get; }
     System.String ToString()
     System.Threading.Tasks.Task StartAsync(System.Threading.CancellationToken CancellationToken)
     System.Threading.Tasks.Task StopAsync(System.Threading.CancellationToken CancellationToken)
@@ -1025,7 +1025,7 @@ sealed class cloud.charging.open.protocols.S2.Connect.EndpointAdvertiser : Syste
 sealed class cloud.charging.open.protocols.S2.Connect.EndpointAdvertiserOptions
     .ctor()
     System.Boolean OnlyWhenReadyForPairing { get; init; }
-    System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses { get; init; }
+    System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses { get; init; }
     System.TimeSpan CheckInterval { get; init; }
     cloud.charging.open.protocols.S2.Connect.S2BaseURL? LongPollingUrl { get; init; }
     org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName { get; init; }
@@ -1138,7 +1138,7 @@ sealed class cloud.charging.open.protocols.S2.Connect.InMemoryS2Store : cloud.ch
     System.Void Clear()
 
 sealed class cloud.charging.open.protocols.S2.Connect.InMemoryServiceDiscovery : System.IAsyncDisposable, cloud.charging.open.protocols.S2.Connect.IServiceDiscovery
-    .ctor(System.TimeProvider TimeProvider, Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory, org.GraphDefined.Vanaheimr.Hermod.IIPAddress DefaultAddress)
+    .ctor(System.TimeProvider TimeProvider, Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory, org.GraphDefined.Vanaheimr.Hermod.IPAddress? DefaultAddress)
     System.Boolean IsRunning { get; }
     System.Collections.Generic.IReadOnlyList<cloud.charging.open.protocols.S2.Connect.IServiceAdvertisementHandle> Advertisements { get; }
     System.String ToString()
@@ -1148,9 +1148,9 @@ sealed class cloud.charging.open.protocols.S2.Connect.InMemoryServiceDiscovery :
     System.Threading.Tasks.Task<cloud.charging.open.protocols.S2.Connect.IServiceAdvertisementHandle> AdvertiseAsync(cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement, System.Threading.CancellationToken CancellationToken)
     System.Threading.Tasks.ValueTask DisposeAsync()
     System.TimeProvider TimeProvider { get; }
-    System.Void AddHost(org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IIPAddress[] Addresses)
+    System.Void AddHost(org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPAddress[] Addresses)
     org.GraphDefined.Vanaheimr.Hermod.DNS.IDNSClient DNSClient { get; }
-    org.GraphDefined.Vanaheimr.Hermod.IIPAddress DefaultAddress { get; }
+    org.GraphDefined.Vanaheimr.Hermod.IPAddress DefaultAddress { get; }
 
 sealed class cloud.charging.open.protocols.S2.Connect.InMemoryWANRegistry : cloud.charging.open.protocols.S2.Connect.IWANRegistry
     .ctor(System.Collections.Generic.IEnumerable<cloud.charging.open.protocols.S2.Connect.EndpointRecord> Records)
@@ -1737,14 +1737,14 @@ sealed class cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord : System.
     static const System.Int32 MaxEntryLength
 
 sealed class cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint : System.IEquatable<cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint>
-    .ctor(org.GraphDefined.Vanaheimr.Hermod.DNS.DNSServiceName InstanceName, org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort Port, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses, cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT, System.Boolean? HostsCEM, System.Boolean? HostsRM, System.DateTimeOffset LastSeen)
+    .ctor(org.GraphDefined.Vanaheimr.Hermod.DNS.DNSServiceName InstanceName, org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort Port, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses, cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT, System.Boolean? HostsCEM, System.Boolean? HostsRM, System.DateTimeOffset LastSeen)
     System.Boolean Equals(System.Object Object)
     System.Boolean Equals(cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint Endpoint)
     System.Boolean SameContentAs(cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint Other)
     System.Boolean? HostsCEM { get; }
     System.Boolean? HostsRM { get; }
     System.Boolean? HostsRole(cloud.charging.open.protocols.S2.EnergyManagementRole Role)
-    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses { get; }
+    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses { get; }
     System.DateTimeOffset LastSeen { get; }
     System.Int32 GetHashCode()
     System.String Name { get; }
@@ -1753,7 +1753,7 @@ sealed class cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint : Sys
     cloud.charging.open.protocols.S2.Connect.S2BaseURL? LongPollingUrl { get; }
     cloud.charging.open.protocols.S2.Connect.S2BaseURL? PairingUrl { get; }
     cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT { get; }
-    cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint With(System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses, cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT, System.Boolean? HostsCEM, System.Boolean? HostsRM, System.DateTimeOffset? LastSeen, org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort? Port)
+    cloud.charging.open.protocols.S2.Connect.S2DiscoveredEndpoint With(System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses, cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT, System.Boolean? HostsCEM, System.Boolean? HostsRM, System.DateTimeOffset? LastSeen, org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort? Port)
     org.GraphDefined.Vanaheimr.Hermod.DNS.DNSServiceName InstanceName { get; }
     org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName { get; }
     org.GraphDefined.Vanaheimr.Hermod.IPPort Port { get; }
@@ -1791,11 +1791,11 @@ sealed class cloud.charging.open.protocols.S2.Connect.S2RequestRateLimiter
     static const System.String UnknownAddress
 
 sealed class cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement : System.IEquatable<cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement>
-    .ctor(org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort Port, cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT, System.Collections.Generic.IEnumerable<cloud.charging.open.protocols.S2.EnergyManagementRole> Roles, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses)
+    .ctor(org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort Port, cloud.charging.open.protocols.S2.Connect.S2DNSSDTXTRecord TXT, System.Collections.Generic.IEnumerable<cloud.charging.open.protocols.S2.EnergyManagementRole> Roles, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses)
     System.Boolean Equals(System.Object Object)
     System.Boolean Equals(cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement)
-    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.DNS.IDNSResourceRecord> ToResourceRecords(System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses, System.TimeSpan? HostRecordTimeToLive, System.TimeSpan? SharedRecordTimeToLive)
-    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses { get; }
+    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.DNS.IDNSResourceRecord> ToResourceRecords(System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses, System.TimeSpan? HostRecordTimeToLive, System.TimeSpan? SharedRecordTimeToLive)
+    System.Collections.Generic.IReadOnlyList<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses { get; }
     System.Collections.Generic.IReadOnlySet<cloud.charging.open.protocols.S2.EnergyManagementRole> Roles { get; }
     System.Int32 GetHashCode()
     System.String ToString()
@@ -1805,7 +1805,7 @@ sealed class cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement : S
     org.GraphDefined.Vanaheimr.Hermod.IPPort Port { get; }
     static System.Boolean op_Equality(cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement1, cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement2)
     static System.Boolean op_Inequality(cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement1, cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement Advertisement2)
-    static cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement FromLocalEndpoint(cloud.charging.open.protocols.S2.Connect.LocalEndpoint Endpoint, cloud.charging.open.protocols.S2.Connect.S2BaseURL? LongPollingUrl, System.Collections.Generic.IEnumerable<cloud.charging.open.protocols.S2.EnergyManagementRole> Roles, org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort? Port, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> Addresses)
+    static cloud.charging.open.protocols.S2.Connect.S2ServiceAdvertisement FromLocalEndpoint(cloud.charging.open.protocols.S2.Connect.LocalEndpoint Endpoint, cloud.charging.open.protocols.S2.Connect.S2BaseURL? LongPollingUrl, System.Collections.Generic.IEnumerable<cloud.charging.open.protocols.S2.EnergyManagementRole> Roles, org.GraphDefined.Vanaheimr.Hermod.DNS.DomainName HostName, org.GraphDefined.Vanaheimr.Hermod.IPPort? Port, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> Addresses)
     static org.GraphDefined.Vanaheimr.Hermod.DNS.DNSServiceName CEMSubtypeName
     static org.GraphDefined.Vanaheimr.Hermod.DNS.DNSServiceName RMSubtypeName
     static org.GraphDefined.Vanaheimr.Hermod.DNS.DNSServiceName ServiceTypeName
@@ -2747,7 +2747,7 @@ sealed class cloud.charging.open.protocols.S2.Node.S2NodeOptions : System.IEquat
     cloud.charging.open.protocols.S2.Connect.SessionInitiationServerOptions SessionInitiationServer { get; init; }
     cloud.charging.open.protocols.S2.S2ParserOptions ParserOptions { get; init; }
     org.GraphDefined.Vanaheimr.Hermod.HTTP.URL? WebSocketUrl { get; init; }
-    org.GraphDefined.Vanaheimr.Hermod.IIPAddress BindAddress { get; init; }
+    org.GraphDefined.Vanaheimr.Hermod.IPAddress? BindAddress { get; init; }
     org.GraphDefined.Vanaheimr.Hermod.IPPort? HTTPPort { get; init; }
     org.GraphDefined.Vanaheimr.Hermod.IPPort? WebSocketPort { get; init; }
     static System.Boolean op_Equality(cloud.charging.open.protocols.S2.Node.S2NodeOptions left, cloud.charging.open.protocols.S2.Node.S2NodeOptions right)
@@ -3749,8 +3749,8 @@ static class cloud.charging.open.protocols.S2.Connect.S2RedactionExtensions
     static Microsoft.Extensions.Logging.ILoggerFactory WithS2Redaction(Microsoft.Extensions.Logging.ILoggerFactory LoggerFactory)
 
 static class cloud.charging.open.protocols.S2.Connect.SelfSignedCA
-    static System.Security.Cryptography.X509Certificates.X509Certificate2 CreateSelfSignedServerCertificate(System.String HostName, System.Collections.Generic.IEnumerable<System.String> AdditionalHostNames, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> IPAddresses, System.TimeSpan? Lifetime, cloud.charging.open.protocols.S2.Connect.S2KeyType? KeyType)
-    static System.Security.Cryptography.X509Certificates.X509Certificate2 IssueServerCertificate(cloud.charging.open.protocols.S2.Connect.S2CertificateAuthority CA, System.String HostName, System.Collections.Generic.IEnumerable<System.String> AdditionalHostNames, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IIPAddress> IPAddresses, System.TimeSpan? Lifetime, cloud.charging.open.protocols.S2.Connect.S2KeyType? KeyType)
+    static System.Security.Cryptography.X509Certificates.X509Certificate2 CreateSelfSignedServerCertificate(System.String HostName, System.Collections.Generic.IEnumerable<System.String> AdditionalHostNames, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> IPAddresses, System.TimeSpan? Lifetime, cloud.charging.open.protocols.S2.Connect.S2KeyType? KeyType)
+    static System.Security.Cryptography.X509Certificates.X509Certificate2 IssueServerCertificate(cloud.charging.open.protocols.S2.Connect.S2CertificateAuthority CA, System.String HostName, System.Collections.Generic.IEnumerable<System.String> AdditionalHostNames, System.Collections.Generic.IEnumerable<org.GraphDefined.Vanaheimr.Hermod.IPAddress> IPAddresses, System.TimeSpan? Lifetime, cloud.charging.open.protocols.S2.Connect.S2KeyType? KeyType)
     static System.TimeSpan DefaultCALifetime
     static System.TimeSpan DefaultServerCertificateLifetime
     static cloud.charging.open.protocols.S2.Connect.S2CertificateAuthority CreateRootCA(System.String Name, System.TimeSpan? Lifetime, cloud.charging.open.protocols.S2.Connect.S2KeyType? KeyType)

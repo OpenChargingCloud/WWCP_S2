@@ -227,7 +227,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(endpoint.TXT.TXTVersion,           Is.EqualTo("1"));
                 Assert.That(endpoint.Name,                     Is.EqualTo("Alias"));
                 Assert.That(endpoint.PairingUrl?.Value,        Is.EqualTo("https://alias.local:8443/pairing/"));
-                Assert.That(endpoint.Addresses,                Is.EqualTo(new IIPAddress[] { IPv4Address.Parse("10.0.0.7") }));
+                Assert.That(endpoint.Addresses,                Is.EqualTo(new IPAddress[] { IPv4Address.Parse("10.0.0.7") }));
                 Assert.That(endpoint.HostsCEM,                 Is.Null,   "no subtype was published");
                 Assert.That(endpoint.HostsRM,                  Is.Null,   "no subtype was published");
                 Assert.That(invalid,                           Is.Empty);
@@ -404,7 +404,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
                 Assert.That(dnssd.Publication?.IsActive,               Is.True);
                 Assert.That(dnssd.Publication?.Records,                Has.Count.EqualTo(5),   "PTR (type), PTR (_rm), SRV, TXT, A");
                 Assert.That(dnssd.Addresses,                           Is.EqualTo(testbed.Server.LocalAddresses));
-                Assert.That(dnssd.Addresses,                           Is.EqualTo(new IIPAddress[] { IPv4Address.Parse("10.0.0.7") }));
+                Assert.That(dnssd.Addresses,                           Is.EqualTo(new IPAddress[] { IPv4Address.Parse("10.0.0.7") }));
                 Assert.That(handle.IsPublished,                        Is.True);
                 Assert.That(handle.HasConflict,                        Is.False);
             });
@@ -412,7 +412,7 @@ namespace cloud.charging.open.protocols.S2.Tests.Connect.Discovery
             var endpoint = await browser.WaitForEndpointAsync(Timeout: WaitTimeout);
 
             Assert.That(endpoint, Is.Not.Null);
-            Assert.That(endpoint!.Addresses, Is.EqualTo(new IIPAddress[] { IPv4Address.Parse("10.0.0.7") }));
+            Assert.That(endpoint!.Addresses, Is.EqualTo(new IPAddress[] { IPv4Address.Parse("10.0.0.7") }));
 
             await handle.WithdrawAsync();
 

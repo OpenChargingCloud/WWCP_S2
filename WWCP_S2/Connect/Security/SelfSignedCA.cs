@@ -86,7 +86,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <param name="KeyType">The key type (default: an ECC key on secp256r1).</param>
         public static X509Certificate2 CreateSelfSignedServerCertificate(String                    HostName,
                                                                          IEnumerable<String>?      AdditionalHostNames   = null,
-                                                                         IEnumerable<IIPAddress>?  IPAddresses           = null,
+                                                                         IEnumerable<IPAddress>?  IPAddresses           = null,
                                                                          TimeSpan?                 Lifetime              = null,
                                                                          S2KeyType?                KeyType               = null)
         {
@@ -157,7 +157,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         public static X509Certificate2 IssueServerCertificate(S2CertificateAuthority    CA,
                                                               String                    HostName,
                                                               IEnumerable<String>?      AdditionalHostNames   = null,
-                                                              IEnumerable<IIPAddress>?  IPAddresses           = null,
+                                                              IEnumerable<IPAddress>?  IPAddresses           = null,
                                                               TimeSpan?                 Lifetime              = null,
                                                               S2KeyType?                KeyType               = null)
         {
@@ -187,7 +187,7 @@ namespace cloud.charging.open.protocols.S2.Connect
 
         private static List<GeneralName> SubjectAltNames(String                    HostName,
                                                          IEnumerable<String>?      AdditionalHostNames,
-                                                         IEnumerable<IIPAddress>?  IPAddresses)
+                                                         IEnumerable<IPAddress>?  IPAddresses)
         {
 
             var names = new List<GeneralName> {

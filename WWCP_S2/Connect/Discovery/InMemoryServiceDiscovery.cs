@@ -43,7 +43,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         private readonly Lock                  stateLock        = new();
         private readonly List<Handle>          advertisements   = [];
         private readonly List<Browser>         browsers         = [];
-        private readonly Dictionary<String, IIPAddress[]>  hosts  = new (StringComparer.OrdinalIgnoreCase);
+        private readonly Dictionary<String, IPAddress[]>  hosts  = new (StringComparer.OrdinalIgnoreCase);
         private readonly ILogger?              logger;
         private          Boolean               isRunning;
         private          Boolean               isDisposed;
@@ -71,7 +71,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// The address used for advertisements without explicit addresses (default: 127.0.0.1).
         /// </summary>
-        public IIPAddress                 DefaultAddress     { get; }
+        public IPAddress                 DefaultAddress     { get; }
 
         /// <summary>
         /// The current advertisements.
@@ -97,7 +97,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <param name="DefaultAddress">The address used for advertisements without explicit addresses (default: 127.0.0.1).</param>
         public InMemoryServiceDiscovery(TimeProvider?    TimeProvider     = null,
                                         ILoggerFactory?  LoggerFactory    = null,
-                                        IIPAddress?      DefaultAddress   = null)
+                                        IPAddress?      DefaultAddress   = null)
         {
 
             this.TimeProvider    = TimeProvider   ?? System.TimeProvider.System;
@@ -158,7 +158,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <param name="HostName">A host name.</param>
         /// <param name="Addresses">The addresses of the host.</param>
         public void AddHost(DomainName               HostName,
-                            params IIPAddress[]      Addresses)
+                            params IPAddress[]      Addresses)
         {
 
             ArgumentNullException.ThrowIfNull(HostName);
@@ -292,7 +292,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         private static String Key(String Name)
             => Name.TrimEnd('.').ToLowerInvariant();
 
-        private IIPAddress[] Resolve(String Name)
+        private IPAddress[] Resolve(String Name)
         {
 
             var key = Key(Name);

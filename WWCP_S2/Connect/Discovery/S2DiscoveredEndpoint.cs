@@ -54,7 +54,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// The addresses of the host.
         /// </summary>
-        public IReadOnlyList<IIPAddress>  Addresses       { get; }
+        public IReadOnlyList<IPAddress>  Addresses       { get; }
 
         /// <summary>
         /// The parsed TXT record.
@@ -118,7 +118,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         public S2DiscoveredEndpoint(DNSServiceName            InstanceName,
                                     DomainName                HostName,
                                     IPPort                    Port,
-                                    IEnumerable<IIPAddress>   Addresses,
+                                    IEnumerable<IPAddress>   Addresses,
                                     S2DNSSDTXTRecord          TXT,
                                     Boolean?                  HostsCEM,
                                     Boolean?                  HostsRM,
@@ -163,7 +163,7 @@ namespace cloud.charging.open.protocols.S2.Connect
         /// <summary>
         /// Return a copy with the given properties replaced.
         /// </summary>
-        public S2DiscoveredEndpoint With(IEnumerable<IIPAddress>?  Addresses   = null,
+        public S2DiscoveredEndpoint With(IEnumerable<IPAddress>?  Addresses   = null,
                                          S2DNSSDTXTRecord?         TXT         = null,
                                          Boolean?                  HostsCEM    = null,
                                          Boolean?                  HostsRM     = null,

@@ -83,7 +83,7 @@ namespace cloud.charging.open.protocols.S2.Node
         /// <summary>
         /// The address the HTTP and WebSocket servers bind to (default: any).
         /// </summary>
-        public IIPAddress?                               BindAddress                          { get; init; }
+        public IPAddress?                               BindAddress                          { get; init; }
 
         /// <summary>
         /// The HTTP port of the pairing and session initiation APIs (default: the port of the pairing URL).
