@@ -298,7 +298,7 @@ namespace cloud.charging.open.protocols.S2.Connect
                    HTTPContentType.Application.JSON_UTF8,
                    ConnectionType.KeepAlive,
                    RemoteCertificateValidator:  ValidatorState.Validate,
-                   MaxNumberOfRetries:          1,
+                   MaxNumberOfRetries:          0,    // one attempt (Hermod counts retries since 33faf1cc); WWCP S2 retries itself
                    DisableLogging:              DisableLogging ?? true,
                    DNSClient:                   DNSClient,
                    LoggerFactory:               LoggerFactory)
@@ -502,7 +502,7 @@ namespace cloud.charging.open.protocols.S2.Connect
                                                 Authentication:     Bearer,
                                                 Content:            Body?.ToString(Formatting.None).ToUTF8Bytes(),
                                                 ContentType:        Body is not null ? HTTPContentType.Application.JSON_UTF8 : null,
-                                                MaxNumberOfRetries: 1,
+                                                MaxNumberOfRetries: 0,
                                                 RequestTimeout:     RequestTimeout,
                                                 CancellationToken:  CancellationToken).ConfigureAwait(false);
 

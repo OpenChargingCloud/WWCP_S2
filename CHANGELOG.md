@@ -160,6 +160,10 @@ independent of the S2 JSON and S2 Connect versions it implements.
 - Follows Hermod `86b8b083`, where `IPAddress` is one value (IPv4 or IPv6) in place of the interface `IIPAddress`:
   every public signature that took or returned `IIPAddress` now uses `IPAddress` (a struct, so an optional one is
   `IPAddress?`); the pins move to Styx `ff807a46` and Hermod `d27b68b0`.
+- Follows Hermod `33faf1cc`, where `MaxNumberOfRetries` counts retries instead of attempts: the S2 Connect clients
+  pass 0 instead of 1, so every request is still sent exactly once and a retry stays WWCP S2's own decision. The pins
+  move to Styx `cbc88e19` and Hermod `67cf52e5`; the test project takes JsonSchema.Net 9.7.0,
+  Microsoft.Extensions.TimeProvider.Testing 11.0.1, Microsoft.NET.Test.Sdk 18.12.0 and NUnit3TestAdapter 6.3.1.
 
 ### Fixed
 

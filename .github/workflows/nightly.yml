@@ -27,8 +27,8 @@ concurrency:
 
 env:
   # The same pins as ci.yml — bump them there, they are copied here.
-  STYX_REF: ff807a461e7928cc52042111b44333f92aa86422
-  HERMOD_REF: d27b68b03c0d7cadc7de2ad0e4ac03330aaff21b
+  STYX_REF: cbc88e19b21a386804daa7a9f3751121b668ace8
+  HERMOD_REF: 67cf52e5b5e56e674d9ea27e0a1531441d304096
 
 jobs:
 
